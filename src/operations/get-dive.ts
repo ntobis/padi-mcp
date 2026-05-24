@@ -1,7 +1,9 @@
 import { graphql } from '../padi-client.js';
 import { getSession } from '../session.js';
-import { RawDiveDetail, type Dive } from '../types.js';
+import { fromAdditionalEquipment } from '../transforms/arrays.js';
+import { naiveDatetimeToIsoDate } from '../transforms/dates.js';
 import { toNumber } from '../transforms/numbers.js';
+import { type Dive, RawDiveDetail } from '../types.js';
 
 const QUERY = `query logbook_logs($affiliate_id: Int!, $id: Int!) {
   logbook_logs(
@@ -55,7 +57,7 @@ export async function getDive(diveId: number): Promise<Dive | null> {
     log_number: toNumber(r.log_number),
     dive_type: r.dive_type ?? null,
     dive_title: r.dive_title ?? null,
-    dive_date: r.dive_date ?? null,
+    dive_date: naiveDatetimeToIsoDate(r.dive_date),
     dive_location: r.dive_location ?? null,
     memsys_member_number: r.memsys_member_number ?? null,
     status: r.status ?? null,
@@ -88,7 +90,7 @@ export async function getDive(diveId: number): Promise<Dive | null> {
           suit_type: e.suit_type ?? null,
           weight: toNumber(e.weight),
           weight_type: e.weight_type ?? null,
-          additional_equipment: e.additional_equipment ?? null,
+          additional_equipment: fromAdditionalEquipment(e.additional_equipment),
           cylinder_type: e.cylinder_type ?? null,
           cylinder_size: toNumber(e.cylinder_size),
           gas_mixture: e.gas_mixture ?? null,
