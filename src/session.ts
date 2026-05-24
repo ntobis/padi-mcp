@@ -72,23 +72,18 @@ export async function loadSession(path: string = SESSION_PATH): Promise<Session>
       'session.json missing `authorization` (Chrome may have stripped it from a HAR export — ' +
         'paste a cURL instead).',
     );
-  if (!parsed.affiliate_id)
-    throw new SessionMissingError('session.json missing `affiliate_id`');
+  if (!parsed.affiliate_id) throw new SessionMissingError('session.json missing `affiliate_id`');
   current = parsed;
   warnIfExpiring(parsed);
   return parsed;
 }
 
 export function getSession(): Session {
-  if (!current)
-    throw new SessionMissingError('Session not loaded. Call loadSession() first.');
+  if (!current) throw new SessionMissingError('Session not loaded. Call loadSession() first.');
   return current;
 }
 
-export async function replaceSession(
-  next: Session,
-  path: string = SESSION_PATH,
-): Promise<Session> {
+export async function replaceSession(next: Session, path: string = SESSION_PATH): Promise<Session> {
   current = next;
   await writeFile(path, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
   warnIfExpiring(next);

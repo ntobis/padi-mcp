@@ -11,6 +11,21 @@
 
 const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const US_DATE_RE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+const NAIVE_DATETIME_RE = /^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}$/;
+
+/**
+ * The brief said reads return bare `YYYY-MM-DD`, but the live API actually
+ * returns `dive_date` as a naive datetime `YYYY-MM-DDTHH:MM:SS` (always
+ * `T00:00:00`). Strip the time portion so callers see the canonical
+ * date-only shape.
+ */
+export function naiveDatetimeToIsoDate(input: string | null | undefined): string | null {
+  if (input == null || input === '') return null;
+  if (ISO_DATE_RE.test(input)) return input;
+  const m = NAIVE_DATETIME_RE.exec(input);
+  if (m) return m[1] ?? null;
+  throw new Error(`Unrecognised dive_date shape "${input}"`);
+}
 
 export function isoToUsDate(iso: string): string {
   const m = ISO_DATE_RE.exec(iso);

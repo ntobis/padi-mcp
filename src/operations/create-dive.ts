@@ -8,6 +8,7 @@
  */
 import { graphql } from '../padi-client.js';
 import { getSession } from '../session.js';
+import { coerceAdditionalEquipmentWrite } from '../transforms/arrays.js';
 import { isoToUsDate, nowNaiveTimestamp } from '../transforms/dates.js';
 import { toNumericString } from '../transforms/numbers.js';
 import type { DiveInput } from '../types.js';
@@ -100,7 +101,7 @@ export function buildInsertGeneral(input: DiveInput): Record<string, unknown> {
         suit_type: input.suit_type ?? null,
         weight: toNumericString(input.weight),
         weight_type: input.weight_type ?? null,
-        additional_equipment: input.additional_equipment ?? null,
+        additional_equipment: coerceAdditionalEquipmentWrite(input.additional_equipment),
         cylinder_type: input.cylinder_type ?? null,
         cylinder_size: toNumericString(input.cylinder_size),
         gas_mixture: input.gas_mixture ?? null,

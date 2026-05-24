@@ -4,9 +4,7 @@
   "mcpServers": {
     "padi": {
       "command": "node",
-      "args": [
-        "/Users/YOUR_USERNAME/code/padi-mcp/dist/index.js"
-      ]
+      "args": ["/Users/YOUR_USERNAME/code/padi-mcp/dist/index.js"]
     }
   }
 }

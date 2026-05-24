@@ -1,4 +1,8 @@
 #!/usr/bin/env tsx
+import { countDives } from '../src/operations/count-dives.js';
+import { getDive } from '../src/operations/get-dive.js';
+import { listDives } from '../src/operations/list-dives.js';
+import { searchDiveSites } from '../src/operations/search-dive-sites.js';
 /**
  * Phase-1 self-verification CLI. Calls operations directly against the
  * live API and prints results. Intended for manual smoke testing.
@@ -10,10 +14,6 @@
  *   tsx scripts/probe.ts search <name>
  */
 import { loadSession } from '../src/session.js';
-import { listDives } from '../src/operations/list-dives.js';
-import { getDive } from '../src/operations/get-dive.js';
-import { countDives } from '../src/operations/count-dives.js';
-import { searchDiveSites } from '../src/operations/search-dive-sites.js';
 
 async function main(): Promise<void> {
   await loadSession();

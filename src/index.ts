@@ -17,22 +17,22 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import { buildSessionFromCurl } from './curl-parser.js';
+import { countDives } from './operations/count-dives.js';
+import { buildInsertGeneral, createDive } from './operations/create-dive.js';
+import { deleteDive, logDeletion } from './operations/delete-dive.js';
+import { getDive } from './operations/get-dive.js';
+import { listDives } from './operations/list-dives.js';
+import { searchDiveSites } from './operations/search-dive-sites.js';
+import { buildUpdateVariables, updateDive } from './operations/update-dive.js';
 import {
+  type Session,
+  SessionMissingError,
   loadSession,
   replaceSession,
   secondsUntilExpiry,
-  SessionMissingError,
-  type Session,
 } from './session.js';
-import { listDives } from './operations/list-dives.js';
-import { getDive } from './operations/get-dive.js';
-import { countDives } from './operations/count-dives.js';
-import { searchDiveSites } from './operations/search-dive-sites.js';
-import { createDive, buildInsertGeneral } from './operations/create-dive.js';
-import { updateDive, buildUpdateVariables } from './operations/update-dive.js';
-import { deleteDive, logDeletion } from './operations/delete-dive.js';
 import { DiveInput, DiveUpdate } from './types.js';
-import { buildSessionFromCurl } from './curl-parser.js';
 
 const SANDBOX_TITLE_PREFIX = 'MCPTEST_';
 const SANDBOX_DATE_CUTOFF = '1950-01-01';
@@ -93,7 +93,7 @@ async function main(): Promise<void> {
   server.registerTool(
     'padi_count_dives',
     {
-      description: 'Return the total number of dives in the authenticated user\'s logbook.',
+      description: "Return the total number of dives in the authenticated user's logbook.",
       inputSchema: {},
     },
     async () => asText({ count: await countDives() }),
@@ -143,14 +143,21 @@ async function main(): Promise<void> {
       description:
         'Create a new dive log. Required: dive_title, dive_date (YYYY-MM-DD). ' +
         'Defaults: log_type=Recreational, status=Publish. Returns the new dive id and the ' +
-        'full record after re-fetch. ENUM hints: dive_type [Boat|Shore|Other], water_type ' +
-        '[Salt|Fresh], weather [Partly Cloudy|Cloudy|Sunny|Rainy], visibility [High|Average|Low], ' +
+        'full record after re-fetch. ENUM hints (all confirmed against live API): ' +
+        'log_type [Recreational|Training], dive_type [Boat|BeachShore|Other], ' +
+        'status [Publish|Draft|Pending], water_type [Salt|Fresh], ' +
+        'body_of_water [Ocean|Lake|Quarry|River|Other], ' +
+        'weather [Sunny|Partly Cloudy|Cloudy|Rainy|Windy|Foggy], visibility [High|Average|Low], ' +
         'wave_condition [NoWaves|SmallWaves|MediumWaves|LargeWaves], current ' +
         '[NoCurrent|SomeCurrent|MediumCurrent|StrongCurrent], surge ' +
-        '[LightSurge|SomeSurge|MediumSurge|StrongSurge], suit_type ' +
-        '[None|Shorty|FullSuit3mm|FullSuit5mm|FullSuit7mm|SemiDry|DrySuit], cylinder_type ' +
-        '[Aluminum|Steel|Other], gas_mixture [Air|Nitrox32|Nitrox36|Enriched|Trimix], feeling ' +
-        '[Amazing|Good|Average|Poor]. SIDE EFFECT: writes to the real PADI logbook.',
+        '[NoSurge|SomeSurge|MediumSurge|BigSurge], suit_type ' +
+        '[NoExposure|Shorty|FullSuit_3mm|FullSuit_5mm|FullSuit_7mm|SemiDrySuit|DrySuit], ' +
+        'weight_type [Light|Good|Heavy], cylinder_type [Aluminum|Steel|Other], gas_mixture ' +
+        '[Air|Enriched_32|Enriched_36|Enriched_40|Enriched|Trimix|Heliox|Rebreather|Nitrox], ' +
+        'feeling [Amazing|Good|Average|Poor]. additional_equipment is a string array, e.g. ' +
+        '["Camera","Light"]. When picking Enriched_32/36/40, ALSO set oxygen= and nitrogen= ' +
+        'to match (e.g. Enriched_32 → oxygen:32, nitrogen:68) — the API does not enforce ' +
+        'consistency. SIDE EFFECT: writes to the real PADI logbook.',
       inputSchema: DiveInput.shape,
     },
     async (args) => {
@@ -209,7 +216,14 @@ async function main(): Promise<void> {
       let strategy: string;
       try {
         strategy = await deleteDive(diveId);
-        await logDeletion(diveId, dive.dive_title, dive.dive_date, strategy as never, 'success', 'mcp');
+        await logDeletion(
+          diveId,
+          dive.dive_title,
+          dive.dive_date,
+          strategy as never,
+          'success',
+          'mcp',
+        );
       } catch (e) {
         await logDeletion(diveId, dive.dive_title, dive.dive_date, 'hard', 'failed', 'mcp');
         throw e;
@@ -240,8 +254,7 @@ async function main(): Promise<void> {
       } else {
         if (!args.authorization || !args.affiliate_id) {
           return asText({
-            error:
-              'pass either `curl` or both `authorization` and `affiliate_id` at minimum',
+            error: 'pass either `curl` or both `authorization` and `affiliate_id` at minimum',
           });
         }
         next = {
