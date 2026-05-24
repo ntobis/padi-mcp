@@ -158,7 +158,8 @@ async function main(): Promise<void> {
 }
 
 const isMain = import.meta.url === `file://${process.argv[1]}`;
-if (isMain) main().catch((e) => {
-  console.error(e instanceof Error ? e.message : String(e));
-  process.exit(1);
-});
+if (isMain)
+  main().catch((e) => {
+    console.error(e instanceof Error ? e.message : String(e));
+    process.exit(1);
+  });
