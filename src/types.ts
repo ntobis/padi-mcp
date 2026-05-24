@@ -10,10 +10,7 @@ import { z } from 'zod';
 
 // ---------- Raw wire shapes (read) ----------
 
-const RawNumber = z
-  .union([z.string(), z.number()])
-  .nullable()
-  .optional();
+const RawNumber = z.union([z.string(), z.number()]).nullable().optional();
 
 export const RawDepthTime = z.object({
   max_depth: RawNumber,
@@ -40,7 +37,10 @@ export const RawEquipment = z.object({
   suit_type: z.string().nullable().optional(),
   weight: RawNumber,
   weight_type: z.string().nullable().optional(),
-  additional_equipment: z.union([z.string(), z.array(z.string())]).nullable().optional(),
+  additional_equipment: z
+    .union([z.string(), z.array(z.string())])
+    .nullable()
+    .optional(),
   cylinder_type: z.string().nullable().optional(),
   cylinder_size: RawNumber,
   gas_mixture: z.string().nullable().optional(),
@@ -129,7 +129,7 @@ export const Dive = z.object({
       suit_type: z.string().nullable(),
       weight: z.number().nullable(),
       weight_type: z.string().nullable(),
-      additional_equipment: z.union([z.string(), z.array(z.string())]).nullable(),
+      additional_equipment: z.array(z.string()).nullable(),
       cylinder_type: z.string().nullable(),
       cylinder_size: z.number().nullable(),
       gas_mixture: z.string().nullable(),
@@ -197,7 +197,10 @@ export const DiveInput = z.object({
   suit_type: z.string().nullable().optional(),
   weight: z.number().nullable().optional(),
   weight_type: z.string().nullable().optional(),
-  additional_equipment: z.union([z.string(), z.array(z.string())]).nullable().optional(),
+  additional_equipment: z
+    .union([z.string(), z.array(z.string())])
+    .nullable()
+    .optional(),
   cylinder_type: z.string().nullable().optional(),
   cylinder_size: z.number().nullable().optional(),
   gas_mixture: z.string().nullable().optional(),

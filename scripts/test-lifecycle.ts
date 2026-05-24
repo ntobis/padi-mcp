@@ -12,11 +12,11 @@
  *   tsx scripts/test-lifecycle.ts
  */
 import { randomUUID } from 'node:crypto';
-import { loadSession } from '../src/session.js';
 import { createDive } from '../src/operations/create-dive.js';
+import { deleteDive } from '../src/operations/delete-dive.js';
 import { getDive } from '../src/operations/get-dive.js';
 import { updateDive } from '../src/operations/update-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
+import { loadSession } from '../src/session.js';
 import type { DiveInput } from '../src/types.js';
 
 const SANDBOX_TITLE = `MCPTEST_${randomUUID()}`;
@@ -135,6 +135,7 @@ async function main(): Promise<void> {
       max_depth: 25,
       visibility: 'Average',
       weight: 3,
+      additional_equipment: ['Camera', 'Dive Light'],
     };
     await updateDive(updatePatch);
     const afterUpdate = await getDive(diveId);
@@ -142,6 +143,14 @@ async function main(): Promise<void> {
       { ...createInput, notes: updatePatch.notes, max_depth: 25, weight: 3 },
       afterUpdate,
     );
+    const ae = afterUpdate?.equipment?.additional_equipment;
+    if (JSON.stringify(ae) !== JSON.stringify(updatePatch.additional_equipment)) {
+      updateDiffs.push({
+        field: 'additional_equipment',
+        expected: updatePatch.additional_equipment,
+        actual: ae,
+      });
+    }
     if (updateDiffs.length > 0) {
       console.error('lifecycle: UPDATE diffs:', JSON.stringify(updateDiffs, null, 2));
       throw new Error('update round-trip failed');

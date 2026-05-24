@@ -1,7 +1,8 @@
 import { graphql } from '../padi-client.js';
 import { getSession } from '../session.js';
-import { RawDiveListItem, type DiveSummary } from '../types.js';
+import { naiveDatetimeToIsoDate } from '../transforms/dates.js';
 import { toNumber } from '../transforms/numbers.js';
+import { type DiveSummary, RawDiveListItem } from '../types.js';
 
 const QUERY = `query logbook_logs($affiliate_id: Int!, $limit: Int, $offset: Int) {
   logbook_logs(
@@ -42,7 +43,7 @@ export async function listDives(
       log_course: parsed.log_course ?? null,
       log_number: toNumber(parsed.log_number),
       dive_title: parsed.dive_title ?? null,
-      dive_date: parsed.dive_date ?? null,
+      dive_date: naiveDatetimeToIsoDate(parsed.dive_date),
       dive_location: parsed.dive_location ?? null,
       status: parsed.status ?? null,
     };

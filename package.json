@@ -23,6 +23,7 @@
     "probe": "tsx scripts/probe.ts",
     "lifecycle": "tsx scripts/test-lifecycle.ts",
     "enum-probe": "tsx scripts/enum-probe.ts",
+    "enum-probe-extra": "tsx scripts/enum-probe-extra.ts",
     "curl-to-session": "tsx scripts/curl-to-session.ts",
     "har-to-session": "tsx scripts/har-to-session.ts"
   },
