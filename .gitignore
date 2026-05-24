@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+inputs/
+samples/
+docs/sample-real-dive.json
+*.har
+*.log
+.DS_Store
+coverage/
+.vitest-cache/
