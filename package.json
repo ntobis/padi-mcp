@@ -1,0 +1,43 @@
+{
+  "name": "padi-mcp",
+  "version": "0.1.0",
+  "description": "Local MCP server exposing the PADI dive logbook.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "dist/index.js",
+  "bin": {
+    "padi-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "probe": "tsx scripts/probe.ts",
+    "lifecycle": "tsx scripts/test-lifecycle.ts",
+    "enum-probe": "tsx scripts/enum-probe.ts",
+    "enum-probe-extra": "tsx scripts/enum-probe-extra.ts",
+    "mcp-smoke": "tsx scripts/mcp-smoke.ts",
+    "probe-har-enums": "tsx scripts/probe-har-enums.ts",
+    "curl-to-session": "tsx scripts/curl-to-session.ts",
+    "har-to-session": "tsx scripts/har-to-session.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
