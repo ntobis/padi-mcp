@@ -34,6 +34,13 @@ export class HttpError extends Error {
   }
 }
 
+export class NetworkPolicyError extends Error {
+  override readonly name = 'NetworkPolicyError';
+  constructor(message: string, readonly denyReason: string) {
+    super(message);
+  }
+}
+
 export interface GraphQLRequest<V> {
   operationName: string;
   query: string;
@@ -80,6 +87,19 @@ export async function graphql<T, V = Record<string, unknown>>(
   const duration = Date.now() - start;
   const text = await res.text();
 
+  // Distinguish a sandbox/proxy block from a real PADI 401/403.
+  const denyReason = res.headers.get('x-deny-reason');
+  if (denyReason) {
+    console.error(
+      `graphql ${req.operationName} blocked-by-proxy ${duration}ms reason=${denyReason}`,
+    );
+    throw new NetworkPolicyError(
+      `Request to ${session.endpoint} was blocked by the network policy ` +
+        `(x-deny-reason: ${denyReason}). Run from a host that can reach PADI, or add ` +
+        'logbook.global-prod.padi.com to the environment allowlist.',
+      denyReason,
+    );
+  }
   if (res.status === 401 || res.status === 403) {
     console.error(`graphql ${req.operationName} ${res.status} ${duration}ms`);
     throw new SessionExpiredError(
