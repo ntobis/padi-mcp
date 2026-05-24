@@ -9,12 +9,16 @@ endpoint the `learning.padi.com` web app uses, with your own auth token.
 
 ## Status
 
-Built phases 0–5 (bootstrap through MCP tool surface). Live verification
-(read round-trip, create/update/delete lifecycle, enum probing) requires a
-JWT capture — see "Capture a session" below.
+Phases 0–5 built; phases 1–4 verified live against the PADI logbook on
+affiliate 14867369. End-to-end MCP stdio smoke test (`npm run mcp-smoke`)
+exercises all 10 tools including a sandbox create→get→update→delete
+round trip — currently 12/12 passing. Phase 6 (Claude Desktop dictation
+test) is the only step left, and needs your Mac.
 
 See [`docs/discovered-schema.md`](docs/discovered-schema.md) for the full
-schema, GraphQL operations, and known quirks.
+schema and GraphQL operations, [`docs/enums.md`](docs/enums.md) for the
+confirmed/rejected enum values, and [`docs/anomalies.md`](docs/anomalies.md)
+for the four spots where the brief was wrong about wire shape.
 
 ## Tools
 
@@ -101,6 +105,8 @@ npm run probe -- get 20716851
 npm run probe -- search "South Point"
 npm run lifecycle                # full CRUD sweep (creates+deletes a sandbox dive)
 npm run enum-probe               # write every candidate enum and read back
+npm run enum-probe-extra         # targeted second-pass probe for gap fields
+npm run mcp-smoke                # build + drive the stdio server end-to-end via JSON-RPC
 ```
 
 ## Repo layout
@@ -119,7 +125,10 @@ scripts/
 ├── har-to-session.ts   Pull samples from a HAR (auth gets stripped by Chrome)
 ├── probe.ts            CLI: count / list / get / search
 ├── test-lifecycle.ts   CRUD round-trip
-└── enum-probe.ts       Probe candidate enum values
+├── enum-probe.ts       Probe candidate enum values
+├── enum-probe-extra.ts Second-pass probe for gap fields + additional_equipment shape
+├── probe-array.ts      One-shot pg-array literal shape probe
+└── mcp-smoke.ts        Drive the stdio MCP server end-to-end via JSON-RPC
 docs/
 ├── progress.md         persistent build log
 ├── discovered-schema.md the brief, plus live additions
