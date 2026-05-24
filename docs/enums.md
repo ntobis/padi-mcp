@@ -15,7 +15,7 @@ Legend:
 | Field | Accepted | Rejected (from candidates tried) |
 |---|---|---|
 | log_type | Recreational, Training | — |
-| dive_type | **Boat, Other** (only 2!) | Shore, ShoreDive, Beach, Pool, Cave, Ice, Night, Drift, Wreck |
+| dive_type | Boat, BeachShore, Other | Shore, ShoreDive, Beach, Pool, Cave, Ice, Night, Drift, Wreck |
 | status | Publish, Draft, Pending | Trash, Deleted, Archived, Archive, Hidden, Private, Public, Active, Inactive |
 | water_type | Salt, Fresh | — |
 | body_of_water | Ocean, Lake, Quarry, River, Other | — |
@@ -23,27 +23,29 @@ Legend:
 | visibility | High, Average, Low | — |
 | wave_condition | NoWaves, SmallWaves, MediumWaves, LargeWaves | — |
 | current | NoCurrent, SomeCurrent, MediumCurrent, StrongCurrent | LightCurrent, LowCurrent, HighCurrent, BigCurrent |
-| surge | NoSurge, SomeSurge, MediumSurge, **BigSurge** | LightSurge, StrongSurge, LowSurge, HighSurge |
-| suit_type | **Shorty, DrySuit** (only 2!) | None, FullSuit3mm, FullSuit5mm, FullSuit7mm, SemiDry, Wetsuit, Wet, Dry, Full, FullSuit, Skin, DiveSkin, Bare, Drysuit, BoardShorts, Swimsuit |
+| surge | NoSurge, SomeSurge, MediumSurge, BigSurge | LightSurge, StrongSurge, LowSurge, HighSurge |
+| suit_type | NoExposure, Shorty, FullSuit_3mm, FullSuit_5mm, FullSuit_7mm, SemiDrySuit, DrySuit | None, FullSuit3mm/5mm/7mm, SemiDry, Wetsuit, Wet, Dry, Full, FullSuit, Skin, DiveSkin, Bare, Drysuit, BoardShorts, Swimsuit |
 | weight_type | Light, Good, Heavy | — |
 | cylinder_type | Aluminum, Steel, Other | — |
-| gas_mixture | Air, Nitrox, Enriched, Trimix, Heliox, Rebreather | Nitrox32, Nitrox36, Nitrox40, EAN, EANx, O2, Oxygen, Argon |
+| gas_mixture | Air, Enriched, Enriched_32, Enriched_36, Enriched_40, Nitrox, Trimix, Heliox, Rebreather | Nitrox32, Nitrox36, Nitrox40, EAN, EANx, O2, Oxygen, Argon |
 | feeling | Amazing, Good, Average, Poor | — |
 
 ### Notes / gotchas
 
-- **`dive_type` is binary.** Only `Boat` and `Other` are accepted. The
-  web UI almost certainly maps "Shore" → `Other`. We probed every
-  obvious shore-flavoured candidate.
-- **`suit_type` is binary.** Only `Shorty` and `DrySuit`. There must be
-  more values that the web UI exposes; our 17 candidates didn't hit them.
-  TODO if the user cares: capture a HAR while the web UI selects every
-  suit option and grep the wire payload.
+- **The web UI uses underscore-separated values where you might expect
+  camelCase or concatenated:** `FullSuit_3mm` (not `FullSuit3mm`),
+  `SemiDrySuit` (not `SemiDry`), `Enriched_32` (not `Nitrox32`),
+  `BeachShore` (not `Shore`). The schema rejects every variant.
 - **`surge` uses `Big*` where `current` uses `Strong*`.** Not symmetric.
 - **`current` has no Light/Low/Min variant** — the smallest non-zero
   level is `SomeCurrent`.
-- **`gas_mixture: Enriched` is what the web UI sends for Nitrox 32/36/40.**
-  Concentration goes in the separate `oxygen` / `nitrogen` fields.
+- **Nitrox handling:** the web UI sends `gas_mixture: Enriched_32`
+  (or `_36`/`_40`) AND also sets `oxygen` / `nitrogen` percentages.
+  The API does NOT enforce consistency — `Enriched_36` with `oxygen=21`
+  is accepted with no error, so callers must keep the two in sync
+  themselves. The plain `Enriched` value also works (web UI sends it
+  too in some flows, perhaps for "custom mix" / non-standard
+  concentrations).
 - **`status: Pending` works** but its meaning is unknown — probably the
   draft-of-a-draft used by the offline mobile app sync flow.
 - **Soft-delete via `status`**: only `Draft` is a usable destination.
@@ -168,3 +170,20 @@ Legend:
 | additional_equipment | comma list: "Camera, Light" | ❌ | [{"extensions":{"path":"$","code":"data-exception"},"message":"malformed array literal: \"Camera, Light\""}] |
 | additional_equipment | JSON array: "[\"Camera\",\"Light\"]" | ❌ | [{"extensions":{"path":"$","code":"data-exception"},"message":"malformed array literal: \"[\"Camera\",\"Light\"]\""}] |
 | additional_equipment | newline list: "Camera\nLight" | ❌ | [{"extensions":{"path":"$","code":"data-exception"},"message":"malformed array literal: \"Camera\nLight\""}] |
+
+## HAR-driven probe run 2026-05-24T09:40:20.723Z
+
+| Field | Value | Outcome | Notes |
+|---|---|---|---|
+| dive_type | BeachShore | ✅ | BeachShore |
+| suit_type | NoExposure | ✅ | NoExposure |
+| suit_type | FullSuit_3mm | ✅ | FullSuit_3mm |
+| suit_type | FullSuit_5mm | ✅ | FullSuit_5mm |
+| suit_type | FullSuit_7mm | ✅ | FullSuit_7mm |
+| suit_type | SemiDrySuit | ✅ | SemiDrySuit |
+| gas_mixture | Enriched_32 | ✅ | Enriched_32 |
+| gas_mixture | Enriched_36 | ✅ | Enriched_36 |
+| gas_mixture | Enriched_40 | ✅ | Enriched_40 |
+| gas_mixture/oxygen | Enriched_32 with oxygen=21 (no change) | ✅ | gas=Enriched_32, oxygen=21 |
+| gas_mixture/oxygen | Enriched_32 + oxygen=32 + nitrogen=68 | ✅ | gas=Enriched_32, oxygen=32 |
+| gas_mixture/oxygen | Enriched_36 + oxygen=21 (intentional mismatch) | ✅ | gas=Enriched_36, oxygen=21 |

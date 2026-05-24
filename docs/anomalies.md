@@ -55,14 +55,31 @@ The brief assumed `status: 'Trash'` would soft-delete. It doesn't —
 status: "Trash"`. The only accepted values are `Publish`, `Draft`,
 `Pending`. `softDelete()` now defaults to `Draft`.
 
-## [2026-05-24T09:10Z] `dive_type` and `suit_type` have only 2 accepted values each
+## [2026-05-24T09:10Z] `dive_type`, `suit_type`, `gas_mixture` enum names use underscores
 
-`dive_type`: only `Boat` and `Other`. Tried Shore, ShoreDive, Beach,
-Pool, Cave, Ice, Night, Drift, Wreck — all rejected. The web UI must be
-collapsing every non-boat dive type to `Other`.
+Initial guesses (FullSuit3mm, Nitrox32, Shore) all failed. A fresh HAR
+capture (`inputs/moreoptions{1,2}.har`) targeting the web UI dropdowns
+revealed the real naming convention uses underscores between letters
+and numbers, plus the words "Beach" + "Shore" combined:
 
-`suit_type`: only `Shorty` and `DrySuit`. Tried 17 plausible candidates
-including FullSuit3mm/5mm/7mm, SemiDry, Wetsuit, Wet, Dry, Skin,
-DiveSkin, Bare, Drysuit, BoardShorts, Swimsuit — all rejected. There
-are presumably more values the web UI uses; a fresh HAR capture
-specifically targeting the suit-type dropdown would reveal them.
+- `dive_type`: `BeachShore` (third value, alongside `Boat` and `Other`)
+- `suit_type`: `NoExposure`, `Shorty`, `FullSuit_3mm`, `FullSuit_5mm`,
+  `FullSuit_7mm`, `SemiDrySuit`, `DrySuit`
+- `gas_mixture`: adds `Enriched_32`, `Enriched_36`, `Enriched_40`
+  on top of the previously-known `Air`, `Enriched`, `Trimix`, `Heliox`,
+  `Rebreather`, `Nitrox`
+
+All round-tripped against live API.
+
+## [2026-05-24T09:32Z] gas_mixture and oxygen are NOT validated for consistency
+
+The web UI gates Enriched_32 with oxygen=32, Enriched_36 with oxygen=36
+etc. — the user thought this was an API requirement. It is not. Sent
+`gas_mixture: Enriched_36, oxygen: 21` directly to the API and it
+accepted without complaint, read back as written. Same for
+`Enriched_32` left with `oxygen` unchanged from a prior `Air` (21).
+
+Implication: when a user dictates "I dove on Nitrox 32" the tool must
+set BOTH `gas_mixture: Enriched_32` AND `oxygen: 32` / `nitrogen: 68`
+itself — the backend won't fail loudly if they drift apart, just
+silently store the inconsistent state.
