@@ -7,9 +7,10 @@
  */
 import { graphql } from '../padi-client.js';
 import { getSession } from '../session.js';
-import { getDive } from './get-dive.js';
+import { coerceAdditionalEquipmentWrite } from '../transforms/arrays.js';
 import { isoToUsDate, nowNaiveTimestamp } from '../transforms/dates.js';
 import type { DiveUpdate } from '../types.js';
+import { getDive } from './get-dive.js';
 
 const MUTATION = `mutation UpdateRecreationalDiveLog(
   $id: Int!,
@@ -100,14 +101,14 @@ export async function buildUpdateVariables(update: DiveUpdate): Promise<UpdateVa
       surge: pick('surge') ?? existing.conditions?.surge ?? null,
     },
     equipment: {
-      starting_pressure:
-        pick('starting_pressure') ?? existing.equipment?.starting_pressure ?? null,
+      starting_pressure: pick('starting_pressure') ?? existing.equipment?.starting_pressure ?? null,
       ending_pressure: pick('ending_pressure') ?? existing.equipment?.ending_pressure ?? null,
       suit_type: pick('suit_type') ?? existing.equipment?.suit_type ?? null,
       weight: pick('weight') ?? existing.equipment?.weight ?? null,
       weight_type: pick('weight_type') ?? existing.equipment?.weight_type ?? null,
-      additional_equipment:
+      additional_equipment: coerceAdditionalEquipmentWrite(
         pick('additional_equipment') ?? existing.equipment?.additional_equipment ?? null,
+      ),
       cylinder_type: pick('cylinder_type') ?? existing.equipment?.cylinder_type ?? null,
       cylinder_size: pick('cylinder_size') ?? existing.equipment?.cylinder_size ?? null,
       gas_mixture: pick('gas_mixture') ?? existing.equipment?.gas_mixture ?? null,

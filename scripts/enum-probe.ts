@@ -11,12 +11,12 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { loadSession } from '../src/session.js';
 import { createDive } from '../src/operations/create-dive.js';
+import { deleteDive } from '../src/operations/delete-dive.js';
 import { getDive } from '../src/operations/get-dive.js';
 import { updateDive } from '../src/operations/update-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
 import { GraphQLError } from '../src/padi-client.js';
+import { loadSession } from '../src/session.js';
 import type { DiveInput } from '../src/types.js';
 
 type Field =
@@ -131,11 +131,7 @@ function readField(field: Field, dive: Awaited<ReturnType<typeof getDive>>): str
     return (dive as unknown as Record<string, string | null>)[field] ?? null;
   }
   const sub = (dive as unknown as Record<string, Record<string, string | null> | null>)[
-    group === 'depthTime'
-      ? 'depth_time'
-      : group === 'experience'
-        ? 'experience'
-        : group
+    group === 'depthTime' ? 'depth_time' : group === 'experience' ? 'experience' : group
   ];
   return sub?.[field] ?? null;
 }
@@ -183,7 +179,13 @@ async function main(): Promise<void> {
   }
 
   // Append a results section to docs/enums.md
-  const lines = ['', `## Probe run ${new Date().toISOString()}`, '', '| Field | Value | Outcome | Notes |', '|---|---|---|---|'];
+  const lines = [
+    '',
+    `## Probe run ${new Date().toISOString()}`,
+    '',
+    '| Field | Value | Outcome | Notes |',
+    '|---|---|---|---|',
+  ];
   for (const r of results) {
     const outcome =
       r.outcome === 'accepted' ? '✅' : r.outcome === 'normalised' ? `🔁 → ${r.read}` : '❌';
