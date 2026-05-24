@@ -10,7 +10,7 @@
  * Request/response logging goes to stderr (stdout is reserved for the MCP
  * stdio transport).
  */
-import { getSession, SessionExpiredError } from './session.js';
+import { SessionExpiredError, getSession } from './session.js';
 
 export class GraphQLError extends Error {
   override readonly name = 'GraphQLError';
@@ -36,7 +36,10 @@ export class HttpError extends Error {
 
 export class NetworkPolicyError extends Error {
   override readonly name = 'NetworkPolicyError';
-  constructor(message: string, readonly denyReason: string) {
+  constructor(
+    message: string,
+    readonly denyReason: string,
+  ) {
     super(message);
   }
 }
@@ -52,9 +55,7 @@ export interface GraphQLResponse<T> {
   errors?: unknown[];
 }
 
-export async function graphql<T, V = Record<string, unknown>>(
-  req: GraphQLRequest<V>,
-): Promise<T> {
+export async function graphql<T, V = Record<string, unknown>>(req: GraphQLRequest<V>): Promise<T> {
   const session = getSession();
   const body = JSON.stringify({
     operationName: req.operationName,

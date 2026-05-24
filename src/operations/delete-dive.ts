@@ -13,7 +13,7 @@
  */
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { graphql, GraphQLError } from '../padi-client.js';
+import { GraphQLError, graphql } from '../padi-client.js';
 import { getDive } from './get-dive.js';
 
 const SOFT_DELETE_MUTATION = `mutation SoftDelete($id: Int!, $status: String!) {
@@ -41,7 +41,14 @@ export type DeleteStrategy = 'soft' | 'hard' | 'per-table';
 
 let cachedStrategy: DeleteStrategy | null = null;
 
-export async function softDelete(diveId: number, status = 'Trash'): Promise<boolean> {
+/**
+ * Soft-delete by flipping `status`. The `status` enum is narrow — empirical
+ * probe (see docs/enums.md → Probe run 2026-05-24T09:05:33Z) confirmed only
+ * `Publish` and `Draft` are accepted; `Trash` / `Deleted` / `Archived` are
+ * rejected with `data-exception: invalid input value for enum status`.
+ * `Draft` is the closest "hide from listings" semantic the API allows.
+ */
+export async function softDelete(diveId: number, status = 'Draft'): Promise<boolean> {
   await graphql({
     operationName: 'SoftDelete',
     query: SOFT_DELETE_MUTATION,
