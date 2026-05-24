@@ -1,0 +1,12 @@
+{
+  "_comment": "Save this as ~/Library/Application Support/Claude/claude_desktop_config.json on macOS. If the file already exists with other MCP servers, merge the 'padi' entry into the existing 'mcpServers' object — do not overwrite the whole file. Replace YOUR_USERNAME with your macOS username and adjust the path if you cloned the repo elsewhere. After saving, fully quit Claude Desktop (Cmd+Q, not just closing the window) and reopen it. The tools should appear in the tool picker.",
+
+  "mcpServers": {
+    "padi": {
+      "command": "node",
+      "args": [
+        "/Users/YOUR_USERNAME/code/padi-mcp/dist/index.js"
+      ]
+    }
+  }
+}
