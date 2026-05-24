@@ -143,18 +143,21 @@ async function main(): Promise<void> {
       description:
         'Create a new dive log. Required: dive_title, dive_date (YYYY-MM-DD). ' +
         'Defaults: log_type=Recreational, status=Publish. Returns the new dive id and the ' +
-        'full record after re-fetch. ENUM hints (✅ confirmed against live API): ' +
-        'log_type [Recreational|Training], dive_type [Boat|Other], ' +
+        'full record after re-fetch. ENUM hints (all confirmed against live API): ' +
+        'log_type [Recreational|Training], dive_type [Boat|BeachShore|Other], ' +
         'status [Publish|Draft|Pending], water_type [Salt|Fresh], ' +
         'body_of_water [Ocean|Lake|Quarry|River|Other], ' +
         'weather [Sunny|Partly Cloudy|Cloudy|Rainy|Windy|Foggy], visibility [High|Average|Low], ' +
         'wave_condition [NoWaves|SmallWaves|MediumWaves|LargeWaves], current ' +
         '[NoCurrent|SomeCurrent|MediumCurrent|StrongCurrent], surge ' +
-        '[NoSurge|SomeSurge|MediumSurge|BigSurge], suit_type [Shorty|DrySuit], weight_type ' +
-        '[Light|Good|Heavy], cylinder_type [Aluminum|Steel|Other], gas_mixture ' +
-        '[Air|Nitrox|Enriched|Trimix|Heliox|Rebreather], feeling [Amazing|Good|Average|Poor]. ' +
-        'additional_equipment is a string array, e.g. ["Camera","Light"]. ' +
-        'SIDE EFFECT: writes to the real PADI logbook.',
+        '[NoSurge|SomeSurge|MediumSurge|BigSurge], suit_type ' +
+        '[NoExposure|Shorty|FullSuit_3mm|FullSuit_5mm|FullSuit_7mm|SemiDrySuit|DrySuit], ' +
+        'weight_type [Light|Good|Heavy], cylinder_type [Aluminum|Steel|Other], gas_mixture ' +
+        '[Air|Enriched_32|Enriched_36|Enriched_40|Enriched|Trimix|Heliox|Rebreather|Nitrox], ' +
+        'feeling [Amazing|Good|Average|Poor]. additional_equipment is a string array, e.g. ' +
+        '["Camera","Light"]. When picking Enriched_32/36/40, ALSO set oxygen= and nitrogen= ' +
+        'to match (e.g. Enriched_32 → oxygen:32, nitrogen:68) — the API does not enforce ' +
+        'consistency. SIDE EFFECT: writes to the real PADI logbook.',
       inputSchema: DiveInput.shape,
     },
     async (args) => {
