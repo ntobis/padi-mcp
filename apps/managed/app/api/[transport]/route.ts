@@ -1,16 +1,18 @@
 /**
  * Managed MCP endpoint (Streamable HTTP) via Vercel's mcp-handler.
  *
- * Phase 1: a static, single-tenant endpoint exposing `ping` and
- * `padi_count_dives`, wired to the dev token provider. Layer-1 caller auth
- * (WorkOS AuthKit) and per-tenant token minting arrive in later phases; for
- * now this proves the transport + tool registration end to end.
+ * Tools resolve the caller's tenant id (Phase 3: a dev stub; Phase 4: the
+ * WorkOS AuthKit session), load that tenant's PADI connection, mint an ID
+ * token, and call PADI. If no account is connected the tool returns the
+ * /connect URL instead of failing opaquely.
  *
  * Connect a Streamable HTTP MCP client to /api/mcp.
  */
 import { countDives } from '@padi-mcp/core';
 import { createMcpHandler } from 'mcp-handler';
-import { DevProviderNotConfiguredError, devContext } from '@/lib/dev-context';
+import { connectUrl, getCurrentUserId } from '@/lib/current-user';
+import { getDb } from '@/lib/db/client';
+import { NeedsReloginError, NotConnectedError, getTenantContext } from '@/lib/tokens';
 
 function text(value: unknown) {
   return {
@@ -21,6 +23,12 @@ function text(value: unknown) {
       },
     ],
   };
+}
+
+async function withTenant<T>(run: (ctx: Awaited<ReturnType<typeof getTenantContext>>) => Promise<T>) {
+  const userId = await getCurrentUserId();
+  const ctx = await getTenantContext(getDb(), userId);
+  return run(ctx);
 }
 
 const handler = createMcpHandler(
@@ -39,17 +47,18 @@ const handler = createMcpHandler(
       'padi_count_dives',
       {
         title: 'Count dives',
-        description:
-          "Return the total number of dives in the connected PADI logbook. (Phase 1: uses a " +
-          'single dev account configured via PADI_DEV_REFRESH_TOKEN.)',
+        description: "Return the total number of dives in the caller's connected PADI logbook.",
         inputSchema: {},
       },
       async () => {
         try {
-          return text({ count: await countDives(devContext()) });
+          return await withTenant(async (ctx) => text({ count: await countDives(ctx) }));
         } catch (e) {
-          if (e instanceof DevProviderNotConfiguredError) {
-            return text({ error: 'not_configured', message: e.message });
+          if (e instanceof NotConnectedError) {
+            return text({ error: 'not_connected', message: 'Connect your PADI account first.', connect_url: connectUrl() });
+          }
+          if (e instanceof NeedsReloginError) {
+            return text({ error: 'needs_relogin', message: 'Your PADI session expired. Reconnect.', connect_url: connectUrl() });
           }
           throw e;
         }
