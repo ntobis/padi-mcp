@@ -10,7 +10,13 @@
  * Request/response logging goes to stderr (stdout is reserved for the MCP
  * stdio transport).
  */
-import { SessionExpiredError, getSession } from './session.js';
+import {
+  SessionExpiredError,
+  SessionNeedsLoginError,
+  getSession,
+  getValidIdToken,
+  refreshIdTokenNow,
+} from './session.js';
 
 export class GraphQLError extends Error {
   override readonly name = 'GraphQLError';
@@ -56,7 +62,12 @@ export interface GraphQLResponse<T> {
 }
 
 export async function graphql<T, V = Record<string, unknown>>(req: GraphQLRequest<V>): Promise<T> {
+  return graphqlOnce(req, false);
+}
+
+async function graphqlOnce<T, V>(req: GraphQLRequest<V>, isRetry: boolean): Promise<T> {
   const session = getSession();
+  const idToken = await getValidIdToken();
   const body = JSON.stringify({
     operationName: req.operationName,
     query: req.query,
@@ -70,7 +81,7 @@ export async function graphql<T, V = Record<string, unknown>>(req: GraphQLReques
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json, text/plain, */*',
-        Authorization: session.authorization,
+        Authorization: `Bearer ${idToken}`,
         'affiliate-id': session.affiliate_id,
         'x-platform': session.x_platform,
         Origin: 'https://learning.padi.com',
@@ -103,9 +114,21 @@ export async function graphql<T, V = Record<string, unknown>>(req: GraphQLReques
   }
   if (res.status === 401 || res.status === 403) {
     console.error(`graphql ${req.operationName} ${res.status} ${duration}ms`);
+    // Token may have been revoked mid-life. Force one fresh token and retry.
+    if (!isRetry) {
+      try {
+        await refreshIdTokenNow();
+      } catch (e) {
+        if (e instanceof SessionNeedsLoginError) throw e;
+        throw new SessionExpiredError(
+          `PADI returned ${res.status} and re-auth failed: ` +
+            `${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+      return graphqlOnce(req, true);
+    }
     throw new SessionExpiredError(
-      `PADI returned ${res.status}. JWT likely expired (1h TTL). ` +
-        'Re-capture cURL from DevTools and run padi_refresh_session.',
+      `PADI returned ${res.status} even after refreshing the token. Run padi_login to sign in again.`,
     );
   }
   if (!res.ok) {
