@@ -9,11 +9,11 @@ endpoint the `learning.padi.com` web app uses, with your own auth token.
 
 ## Status
 
-Phases 0–5 built; phases 1–4 verified live against the PADI logbook on
-affiliate 14867369. End-to-end MCP stdio smoke test (`npm run mcp-smoke`)
-exercises all 10 tools including a sandbox create→get→update→delete
-round trip — currently 12/12 passing. Phase 6 (Claude Desktop dictation
-test) is the only step left, and needs your Mac.
+Fully working against the live PADI logbook. All MCP tools are exercised by an
+end-to-end stdio smoke test (`npm run mcp-smoke`). Authentication is via
+`padi_login` (PADI email + password → Cognito), which auto-refreshes the
+1-hour ID token from a stored refresh token; the older cURL-capture flow is
+kept as a fallback.
 
 See [`docs/discovered-schema.md`](docs/discovered-schema.md) for the full
 schema and GraphQL operations, [`docs/enums.md`](docs/enums.md) for the
@@ -32,7 +32,10 @@ for the four spots where the brief was wrong about wire shape.
 | `padi_create_dive` | Create a new dive (writes to your real logbook) |
 | `padi_update_dive` | Patch any subset of fields by id |
 | `padi_delete_dive` | Sandbox-guarded delete (tries hard → per-table → soft) |
-| `padi_refresh_session` | Replace the loaded JWT mid-session |
+| `padi_login` | Log in with PADI email + password; enables auto-refresh |
+| `padi_logout` | Clear the stored session and any saved password |
+| `padi_auth_status` | Report login state + token expiry (no secrets) |
+| `padi_refresh_session` | Advanced/fallback: load a session from a raw cURL |
 | `padi_dry_run` | Preview the GraphQL payload that would be sent |
 
 ## Setup
@@ -42,9 +45,40 @@ npm install
 npm run build
 ```
 
-### Capture a session
+### Log in (recommended)
 
-PADI's JWT lives in the browser. To get one for the server:
+The server authenticates against PADI's Cognito and keeps itself signed in.
+You log in **once** with your PADI email + password; it stores the refresh
+token and silently mints a fresh 1-hour ID token whenever the old one expires
+— no more re-capturing a cURL every hour.
+
+From the terminal:
+
+```bash
+npm run login                 # prompts for email + password
+npm run login -- you@x.com --remember   # also store the password for hands-off forever
+```
+
+Or, inside Claude, just say: *"Log into PADI, my email is … and password is …"*
+(calls the `padi_login` tool).
+
+- The **refresh token** lasts ~30 days. Within that window the server
+  re-authenticates automatically; you do nothing.
+- `--remember` / `remember_password: true` additionally stores your password
+  (in the **macOS Keychain** when available, otherwise an AES-encrypted file in
+  `inputs/`) so the server can re-login even after the refresh token expires —
+  truly zero-touch. Off by default; your password is never logged or echoed.
+- Check state any time with the `padi_auth_status` tool; sign out with
+  `padi_logout`.
+
+Override the Cognito target if PADI ever changes it via `PADI_COGNITO_REGION` /
+`PADI_COGNITO_CLIENT_ID`.
+
+### Capture a session from a cURL (advanced / fallback)
+
+If you can't log in directly, you can still load a short-lived session from a
+browser capture (note: a cURL-only session has **no** refresh token, so it
+still expires after ~1 hour):
 
 1. Open Chrome at <https://learning.padi.com> and sign in.
 2. Open DevTools → Network tab, type `Logbook` in the filter box.
@@ -60,9 +94,10 @@ PADI's JWT lives in the browser. To get one for the server:
    That writes `inputs/session.json` with the JWT, affiliate id, user-agent
    and a decoded `cognito_sub`.
 
-The JWT expires **1 hour** after it was issued by Cognito. When it does,
-re-capture with the same flow and re-run the script — or call the
-`padi_refresh_session` MCP tool with the new cURL string.
+A cURL-captured JWT expires **1 hour** after Cognito issued it, with no way to
+renew it — that's why `padi_login` is the recommended path. If you do use the
+cURL flow, re-capture and re-run the script (or call `padi_refresh_session`)
+each hour.
 
 ### Install in Claude Desktop
 
@@ -119,7 +154,8 @@ after themselves.
 
 ```bash
 npm run dev                      # run via tsx (no build needed)
-npm test                         # vitest (transforms etc.)
+npm run login                    # log in with PADI email + password (enables auto-refresh)
+npm test                         # vitest (transforms, cognito, session, credential store)
 npm run probe -- count           # quick read smoke test
 npm run probe -- list 5
 npm run probe -- get 20716851
