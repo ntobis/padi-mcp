@@ -15,7 +15,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@padi-mcp/core": "*",
+    "@workos-inc/authkit-nextjs": "^4.1.0",
     "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.3",
     "mcp-handler": "^1.1.0",
     "next": "^16.2.6",
     "postgres": "^3.4.9",

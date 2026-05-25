@@ -1,17 +1,18 @@
 /**
- * Managed MCP endpoint (Streamable HTTP) via Vercel's mcp-handler.
- *
- * Tools resolve the caller's tenant id (Phase 3: a dev stub; Phase 4: the
- * WorkOS AuthKit session), load that tenant's PADI connection, mint an ID
- * token, and call PADI. If no account is connected the tool returns the
- * /connect URL instead of failing opaquely.
- *
- * Connect a Streamable HTTP MCP client to /api/mcp.
+ * Managed MCP endpoint (Streamable HTTP) via Vercel's mcp-handler, protected by
+ * WorkOS AuthKit OAuth (withMcpAuth). Claude does the OAuth handshake against
+ * AuthKit (discovered via Protected Resource Metadata at
+ * /.well-known/oauth-protected-resource), then sends a bearer token we verify
+ * per request. The verified user id is the tenant key — never taken from tool
+ * arguments. Each tool loads that tenant's PADI connection, mints an ID token,
+ * and calls PADI.
  */
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { countDives } from '@padi-mcp/core';
-import { createMcpHandler } from 'mcp-handler';
-import { connectUrl, getCurrentUserId } from '@/lib/current-user';
+import { createMcpHandler, withMcpAuth } from 'mcp-handler';
+import { connectUrl } from '@/lib/current-user';
 import { getDb } from '@/lib/db/client';
+import { verifyWorkosToken } from '@/lib/mcp-auth';
 import { NeedsReloginError, NotConnectedError, getTenantContext } from '@/lib/tokens';
 
 function text(value: unknown) {
@@ -25,19 +26,21 @@ function text(value: unknown) {
   };
 }
 
-async function withTenant<T>(run: (ctx: Awaited<ReturnType<typeof getTenantContext>>) => Promise<T>) {
-  const userId = await getCurrentUserId();
-  const ctx = await getTenantContext(getDb(), userId);
-  return run(ctx);
+function userIdFrom(extra: { authInfo?: AuthInfo }): string {
+  const id = extra.authInfo?.extra?.userId;
+  if (typeof id !== 'string' || !id) {
+    throw new Error('Authenticated user id missing from token.');
+  }
+  return id;
 }
 
-const handler = createMcpHandler(
+const base = createMcpHandler(
   (server) => {
     server.registerTool(
       'ping',
       {
         title: 'Ping',
-        description: 'Health check. Returns "pong" and the server time. No auth required.',
+        description: 'Health check. Returns "pong" and the server time.',
         inputSchema: {},
       },
       async () => text({ status: 'pong', time: new Date().toISOString() }),
@@ -50,15 +53,25 @@ const handler = createMcpHandler(
         description: "Return the total number of dives in the caller's connected PADI logbook.",
         inputSchema: {},
       },
-      async () => {
+      async (_args, extra) => {
         try {
-          return await withTenant(async (ctx) => text({ count: await countDives(ctx) }));
+          const userId = userIdFrom(extra as { authInfo?: AuthInfo });
+          const ctx = await getTenantContext(getDb(), userId);
+          return text({ count: await countDives(ctx) });
         } catch (e) {
           if (e instanceof NotConnectedError) {
-            return text({ error: 'not_connected', message: 'Connect your PADI account first.', connect_url: connectUrl() });
+            return text({
+              error: 'not_connected',
+              message: 'Connect your PADI account first.',
+              connect_url: connectUrl(),
+            });
           }
           if (e instanceof NeedsReloginError) {
-            return text({ error: 'needs_relogin', message: 'Your PADI session expired. Reconnect.', connect_url: connectUrl() });
+            return text({
+              error: 'needs_relogin',
+              message: 'Your PADI session expired. Reconnect.',
+              connect_url: connectUrl(),
+            });
           }
           throw e;
         }
@@ -75,5 +88,10 @@ const handler = createMcpHandler(
     verboseLogs: process.env.NODE_ENV === 'development',
   },
 );
+
+const handler = withMcpAuth(base, verifyWorkosToken, {
+  required: true,
+  resourceMetadataPath: '/.well-known/oauth-protected-resource',
+});
 
 export { handler as GET, handler as POST, handler as DELETE };
