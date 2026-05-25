@@ -1,26 +1,50 @@
 /**
  * Verifies a WorkOS AuthKit access token (the bearer Claude sends after the
- * OAuth handshake) for the MCP endpoint. We validate the JWT signature against
- * WorkOS's public JWKS and take the `sub` claim as the tenant id (the same
- * WorkOS user id the web /connect flow uses). No secret needed — JWKS is public
- * and we don't fetch the user profile, only the id.
+ * OAuth handshake) for the MCP endpoint.
  *
- * Hardening TODO (pre-public): also assert the token audience is bound to this
- * resource URL, per the MCP authorization spec.
+ * The MCP/DCR flow is served by your AuthKit domain (https://<slug>.authkit.app),
+ * NOT api.workos.com. We discover that authorization server's metadata
+ * (issuer + jwks_uri) from WORKOS_AUTHKIT_DOMAIN, verify the JWT signature
+ * against its JWKS and check the issuer, and take `sub` as the tenant id (the
+ * same WorkOS user id the web /connect flow uses). No secret needed.
  */
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { type JWTPayload, createRemoteJWKSet, jwtVerify } from 'jose';
 
-function jwksUrl(): URL {
-  if (process.env.WORKOS_JWKS_URL) return new URL(process.env.WORKOS_JWKS_URL);
-  const clientId = process.env.WORKOS_CLIENT_ID ?? '';
-  return new URL(`https://api.workos.com/sso/jwks/${clientId}`);
+interface AuthServerMetadata {
+  issuer: string;
+  jwks_uri: string;
 }
 
+let metadata: AuthServerMetadata | null = null;
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
-function getJwks() {
-  if (!jwks) jwks = createRemoteJWKSet(jwksUrl());
-  return jwks;
+let loading: Promise<void> | null = null;
+
+function authkitDomain(): string {
+  const domain = (process.env.WORKOS_AUTHKIT_DOMAIN ?? '').trim().replace(/\/$/, '');
+  if (!domain) {
+    throw new Error('WORKOS_AUTHKIT_DOMAIN is not set (e.g. https://your-slug.authkit.app).');
+  }
+  return domain;
+}
+
+async function ensureLoaded(): Promise<void> {
+  if (metadata && jwks) return;
+  if (!loading) {
+    loading = (async () => {
+      const url = `${authkitDomain()}/.well-known/oauth-authorization-server`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Auth server metadata fetch failed (${res.status}) from ${url}`);
+      const meta = (await res.json()) as AuthServerMetadata;
+      if (!meta.jwks_uri || !meta.issuer) throw new Error('Auth server metadata missing jwks_uri/issuer');
+      jwks = createRemoteJWKSet(new URL(meta.jwks_uri));
+      metadata = meta;
+    })().catch((e) => {
+      loading = null; // allow retry on next request
+      throw e;
+    });
+  }
+  await loading;
 }
 
 export async function verifyWorkosToken(
@@ -30,9 +54,12 @@ export async function verifyWorkosToken(
   if (!bearerToken) return undefined;
   let payload: JWTPayload;
   try {
-    ({ payload } = await jwtVerify(bearerToken, getJwks()));
+    await ensureLoaded();
+    ({ payload } = await jwtVerify(bearerToken, jwks as NonNullable<typeof jwks>, {
+      issuer: (metadata as AuthServerMetadata).issuer,
+    }));
   } catch {
-    return undefined; // invalid signature, expired, etc.
+    return undefined; // invalid signature/issuer, expired, or metadata unavailable
   }
   if (typeof payload.sub !== 'string' || !payload.sub) return undefined;
   const scopes =
