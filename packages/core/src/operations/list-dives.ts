@@ -1,5 +1,4 @@
-import { graphql } from '../padi-client.js';
-import { getSession } from '../session.js';
+import { type PadiContext, graphql } from '../padi-client.js';
 import { naiveDatetimeToIsoDate } from '../transforms/dates.js';
 import { toNumber } from '../transforms/numbers.js';
 import { type DiveSummary, RawDiveListItem } from '../types.js';
@@ -23,14 +22,14 @@ const QUERY = `query logbook_logs($affiliate_id: Int!, $limit: Int, $offset: Int
 }`;
 
 export async function listDives(
+  ctx: PadiContext,
   args: { limit?: number; offset?: number } = {},
 ): Promise<DiveSummary[]> {
-  const { affiliate_id } = getSession();
-  const data = await graphql<{ logbook_logs: unknown[] }>({
+  const data = await graphql<{ logbook_logs: unknown[] }>(ctx, {
     operationName: 'logbook_logs',
     query: QUERY,
     variables: {
-      affiliate_id: Number(affiliate_id),
+      affiliate_id: Number(ctx.affiliateId),
       limit: args.limit ?? 20,
       offset: args.offset ?? 0,
     },

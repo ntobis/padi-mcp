@@ -1,6 +1,10 @@
+import {
+  CognitoAuthError,
+  decodeJwtClaims,
+  loginWithPassword,
+  refreshTokens,
+} from '@padi-mcp/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CognitoAuthError, loginWithPassword, refreshTokens } from '../src/auth/cognito.js';
-import { decodeJwtClaims } from '../src/auth/jwt.js';
 
 const CFG = { region: 'us-west-2', clientId: 'test-client' };
 

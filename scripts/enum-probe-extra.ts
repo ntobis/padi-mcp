@@ -8,14 +8,9 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createDive } from '../src/operations/create-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
-import { getDive } from '../src/operations/get-dive.js';
-import { updateDive } from '../src/operations/update-dive.js';
-import { GraphQLError, graphql } from '../src/padi-client.js';
-import { loadSession } from '../src/session.js';
-import { getSession } from '../src/session.js';
-import type { DiveInput } from '../src/types.js';
+import type { DiveInput } from '@padi-mcp/core';
+import { GraphQLError, createDive, deleteDive, getDive, graphql, updateDive } from '../src/padi.js';
+import { getSession, loadSession } from '../src/session.js';
 
 type Field = 'dive_type' | 'status' | 'suit_type' | 'gas_mixture' | 'surge' | 'current';
 

@@ -11,9 +11,7 @@
  * and used as the default on subsequent calls. We persist the winning
  * strategy in-memory only — restart and we'll re-probe (idempotent).
  */
-import { appendFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
-import { GraphQLError, graphql } from '../padi-client.js';
+import { GraphQLError, type PadiContext, graphql } from '../padi-client.js';
 import { getDive } from './get-dive.js';
 
 const SOFT_DELETE_MUTATION = `mutation SoftDelete($id: Int!, $status: String!) {
@@ -48,36 +46,40 @@ let cachedStrategy: DeleteStrategy | null = null;
  * rejected with `data-exception: invalid input value for enum status`.
  * `Draft` is the closest "hide from listings" semantic the API allows.
  */
-export async function softDelete(diveId: number, status = 'Draft'): Promise<boolean> {
-  await graphql({
+export async function softDelete(
+  ctx: PadiContext,
+  diveId: number,
+  status = 'Draft',
+): Promise<boolean> {
+  await graphql(ctx, {
     operationName: 'SoftDelete',
     query: SOFT_DELETE_MUTATION,
     variables: { id: diveId, status },
   });
   // Verify the dive no longer appears as a normal status
-  const after = await getDive(diveId);
+  const after = await getDive(ctx, diveId);
   // If we can still read it AND it shows as the soft-delete status, that's a successful soft delete.
   return after !== null && after.status === status;
 }
 
-export async function hardDelete(diveId: number): Promise<boolean> {
-  const data = await graphql<{ delete_logbook_logs: { affected_rows: number } }>({
+export async function hardDelete(ctx: PadiContext, diveId: number): Promise<boolean> {
+  const data = await graphql<{ delete_logbook_logs: { affected_rows: number } }>(ctx, {
     operationName: 'HardDelete',
     query: HARD_DELETE_MUTATION,
     variables: { id: diveId },
   });
   if (data.delete_logbook_logs.affected_rows < 1) return false;
-  const after = await getDive(diveId);
+  const after = await getDive(ctx, diveId);
   return after === null;
 }
 
-export async function perTableDelete(diveId: number): Promise<boolean> {
-  await graphql({
+export async function perTableDelete(ctx: PadiContext, diveId: number): Promise<boolean> {
+  await graphql(ctx, {
     operationName: 'PerTableDelete',
     query: PER_TABLE_DELETE_MUTATION,
     variables: { id: diveId },
   });
-  const after = await getDive(diveId);
+  const after = await getDive(ctx, diveId);
   return after === null;
 }
 
@@ -89,9 +91,9 @@ export async function perTableDelete(diveId: number): Promise<boolean> {
  * mirrors the captured update mutation's table layout. Soft-delete last —
  * leaves rows behind, so only used if both hard paths fail.
  */
-export async function deleteDive(diveId: number): Promise<DeleteStrategy> {
+export async function deleteDive(ctx: PadiContext, diveId: number): Promise<DeleteStrategy> {
   if (cachedStrategy) {
-    const ok = await runStrategy(cachedStrategy, diveId);
+    const ok = await runStrategy(ctx, cachedStrategy, diveId);
     if (ok) return cachedStrategy;
     cachedStrategy = null;
   }
@@ -99,7 +101,7 @@ export async function deleteDive(diveId: number): Promise<DeleteStrategy> {
   let lastError: unknown = null;
   for (const strategy of order) {
     try {
-      const ok = await runStrategy(strategy, diveId);
+      const ok = await runStrategy(ctx, strategy, diveId);
       if (ok) {
         cachedStrategy = strategy;
         return strategy;
@@ -119,27 +121,17 @@ export async function deleteDive(diveId: number): Promise<DeleteStrategy> {
   );
 }
 
-async function runStrategy(strategy: DeleteStrategy, diveId: number): Promise<boolean> {
+async function runStrategy(
+  ctx: PadiContext,
+  strategy: DeleteStrategy,
+  diveId: number,
+): Promise<boolean> {
   switch (strategy) {
     case 'soft':
-      return softDelete(diveId);
+      return softDelete(ctx, diveId);
     case 'hard':
-      return hardDelete(diveId);
+      return hardDelete(ctx, diveId);
     case 'per-table':
-      return perTableDelete(diveId);
+      return perTableDelete(ctx, diveId);
   }
-}
-
-export async function logDeletion(
-  diveId: number,
-  title: string | null,
-  date: string | null,
-  strategy: DeleteStrategy,
-  result: 'success' | 'failed',
-  actor: string,
-): Promise<void> {
-  const line =
-    `${new Date().toISOString()} dive_id=${diveId} title=${JSON.stringify(title)} ` +
-    `date=${date} strategy=${strategy} result=${result} actor=${actor}\n`;
-  await appendFile(resolve(process.cwd(), 'docs/deletions.log'), line, 'utf8');
 }

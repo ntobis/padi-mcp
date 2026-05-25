@@ -11,23 +11,13 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createDive } from '../src/operations/create-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
-import { getDive } from '../src/operations/get-dive.js';
-import { updateDive } from '../src/operations/update-dive.js';
-import { GraphQLError } from '../src/padi-client.js';
+import type { DiveInput } from '@padi-mcp/core';
+import { GraphQLError, createDive, deleteDive, getDive, updateDive } from '../src/padi.js';
 import { loadSession } from '../src/session.js';
-import type { DiveInput } from '../src/types.js';
 
 const FROM_HAR: Record<string, string[]> = {
   dive_type: ['BeachShore'],
-  suit_type: [
-    'NoExposure',
-    'FullSuit_3mm',
-    'FullSuit_5mm',
-    'FullSuit_7mm',
-    'SemiDrySuit',
-  ],
+  suit_type: ['NoExposure', 'FullSuit_3mm', 'FullSuit_5mm', 'FullSuit_7mm', 'SemiDrySuit'],
   gas_mixture: ['Enriched_32', 'Enriched_36', 'Enriched_40'],
 };
 
@@ -99,10 +89,7 @@ function readField(field: string, dive: Awaited<ReturnType<typeof getDive>>): st
   return (eq as unknown as Record<string, string | null>)[field] ?? null;
 }
 
-async function probeOxygenRequirement(
-  diveId: number,
-  results: Result[],
-): Promise<void> {
+async function probeOxygenRequirement(diveId: number, results: Result[]): Promise<void> {
   // Does setting gas_mixture: Enriched_32 require oxygen to be set?
   // Try: gas_mixture only (no oxygen change), then with oxygen=32.
   console.error('--- gas_mixture/oxygen interaction ---');
@@ -162,7 +149,9 @@ async function probeOxygenRequirement(
       });
     } catch (e) {
       if (e instanceof GraphQLError) {
-        console.error(`❌ Enriched_36 + oxygen=21 rejected: ${JSON.stringify(e.errors).slice(0, 250)}`);
+        console.error(
+          `❌ Enriched_36 + oxygen=21 rejected: ${JSON.stringify(e.errors).slice(0, 250)}`,
+        );
         results.push({
           field: 'gas_mixture/oxygen',
           value: 'Enriched_36 + oxygen=21 (mismatch)',
@@ -227,11 +216,7 @@ async function main(): Promise<void> {
   ];
   for (const r of results) {
     const outcome =
-      r.outcome === 'accepted'
-        ? '✅'
-        : r.outcome === 'normalised'
-          ? `🔁 → ${r.read}`
-          : '❌';
+      r.outcome === 'accepted' ? '✅' : r.outcome === 'normalised' ? `🔁 → ${r.read}` : '❌';
     const notes = r.error ? r.error.slice(0, 160) : (r.read ?? '');
     lines.push(`| ${r.field} | ${r.value} | ${outcome} | ${notes} |`);
   }
