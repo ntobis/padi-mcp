@@ -12,12 +12,9 @@
  *   tsx scripts/test-lifecycle.ts
  */
 import { randomUUID } from 'node:crypto';
-import { createDive } from '../src/operations/create-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
-import { getDive } from '../src/operations/get-dive.js';
-import { updateDive } from '../src/operations/update-dive.js';
+import type { DiveInput } from '@padi-mcp/core';
+import { createDive, deleteDive, getDive, updateDive } from '../src/padi.js';
 import { loadSession } from '../src/session.js';
-import type { DiveInput } from '../src/types.js';
 
 const SANDBOX_TITLE = `MCPTEST_${randomUUID()}`;
 const SANDBOX_DATE = '1900-01-01';
