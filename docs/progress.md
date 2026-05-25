@@ -5,6 +5,10 @@ This file is the persistent memory for the PADI MCP build. Read this and
 
 Format: `[ISO timestamp] [PHASE] message`. One line per meaningful step.
 
+## 2026-05-25 (Feature 2 — managed service)
+
+- `[2026-05-25T08:00:00Z] [F2-P0 MONOREPO] Extracted @padi-mcp/core (npm workspaces; user chose npm over pnpm). Moved cognito, jwt, types, transforms, padi-client, and all 7 operations into packages/core/src; refactored the client + operations to take an explicit PadiContext {endpoint, affiliateId, xPlatform, userAgent, getToken} instead of reading a global session — this is the multi-tenant-safe seam (no module-global auth state, safe under Vercel serverless concurrency). padi-client.graphql(ctx, req) now: token via ctx.getToken(); on 401 retries once with ctx.getToken({forceRefresh:true}); throws UnauthorizedError if still 401. Local server stays at repo root (Claude Desktop dist/index.js path unchanged); new src/padi.ts facade binds core ops to a localContext() built from the file session, preserving old single-arg signatures so index.ts + all scripts only changed import paths. logDeletion moved to local src/deletion-log.ts (now best-effort: a write failure no longer turns a successful delete into a reported failure). Build wiring: root tsconfig.json has paths @padi-mcp/core→packages/core/src for typecheck/dev; tsconfig.build.json overrides paths:{} so the app build + node runtime resolve the built core/dist via the workspace symlink; vitest.config.ts aliases core→src; root build script chains build:core then app. session-refresh.test mocks @padi-mcp/core partially (importOriginal + stub login/refresh). VERIFIED: typecheck clean, 27 tests pass, clean rebuild (no stale dist), built server runs from /tmp (cwd-independent), resolves @padi-mcp/core at runtime, 13 tools register, tool calls route facade→core. Live dive ops need a valid session (only on user's machine; logic byte-identical to v1). NEXT: F2-P1 Next.js app + mcp-handler endpoint.`
+
 ## 2026-05-24
 
 - `[2026-05-24T08:20:00Z] [P0] Read padi-mcp-brief.md end-to-end. Branch claude/relaxed-hopper-lvhj5 already checked out, clean tree.`

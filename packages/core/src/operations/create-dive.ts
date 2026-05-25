@@ -6,8 +6,7 @@
  * The captured payload (samples/insert_logbook_logs.json) uses string-valued
  * numerics; we mirror that on insert.
  */
-import { graphql } from '../padi-client.js';
-import { getSession } from '../session.js';
+import { type PadiContext, graphql } from '../padi-client.js';
 import { coerceAdditionalEquipmentWrite } from '../transforms/arrays.js';
 import { isoToUsDate, nowNaiveTimestamp } from '../transforms/dates.js';
 import { toNumericString } from '../transforms/numbers.js';
@@ -54,11 +53,10 @@ interface InsertResult {
  * payload does. Anything optional that's `undefined` is omitted; anything
  * `null` is sent as null (matches the wire convention).
  */
-export function buildInsertGeneral(input: DiveInput): Record<string, unknown> {
-  const { affiliate_id } = getSession();
+export function buildInsertGeneral(ctx: PadiContext, input: DiveInput): Record<string, unknown> {
   const ts = nowNaiveTimestamp();
   return {
-    affiliate_id,
+    affiliate_id: ctx.affiliateId,
     log_type: input.log_type,
     log_course: input.log_course ?? null,
     log_number: input.log_number ?? null,
@@ -121,9 +119,9 @@ export function buildInsertGeneral(input: DiveInput): Record<string, unknown> {
   };
 }
 
-export async function createDive(input: DiveInput): Promise<number> {
-  const general = buildInsertGeneral(input);
-  const data = await graphql<{ insert_logbook_logs: InsertResult }>({
+export async function createDive(ctx: PadiContext, input: DiveInput): Promise<number> {
+  const general = buildInsertGeneral(ctx, input);
+  const data = await graphql<{ insert_logbook_logs: InsertResult }>(ctx, {
     operationName: 'insert_logbook_logs',
     query: MUTATION,
     variables: { general },
