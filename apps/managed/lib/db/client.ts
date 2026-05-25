@@ -6,9 +6,15 @@
  * Tests don't use this — they run the schema against an in-process PGlite
  * instance (see test/db.test.ts).
  */
+import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+
+// Driver-agnostic DB type so the same logic runs against postgres.js (runtime)
+// and PGlite (tests). `any` in the query-result slot lets both drivers assign.
+// biome-ignore lint/suspicious/noExplicitAny: needed to accept both drivers
+export type AppDb = PgDatabase<any, typeof schema>;
 
 let db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
