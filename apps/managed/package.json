@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "mcp-http-smoke": "tsx scripts/mcp-http-smoke.ts",
     "connect-smoke": "tsx scripts/connect-smoke.ts"
   },
