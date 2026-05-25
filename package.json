@@ -21,6 +21,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "login": "tsx scripts/login.ts",
+    "verify-refresh": "tsx scripts/verify-refresh.ts",
     "probe": "tsx scripts/probe.ts",
     "lifecycle": "tsx scripts/test-lifecycle.ts",
     "enum-probe": "tsx scripts/enum-probe.ts",
