@@ -5,8 +5,7 @@
  * Numerics go as numbers (matches the captured UpdateRecreationalDiveLog
  * payload — e.g. `bottom_water_temp: 25`, `weight: 2`).
  */
-import { graphql } from '../padi-client.js';
-import { getSession } from '../session.js';
+import { type PadiContext, graphql } from '../padi-client.js';
 import { coerceAdditionalEquipmentWrite } from '../transforms/arrays.js';
 import { isoToUsDate, nowNaiveTimestamp } from '../transforms/dates.js';
 import type { DiveUpdate } from '../types.js';
@@ -52,10 +51,12 @@ export interface UpdateVariables {
  * web UI does (which always sends the full set). This avoids accidentally
  * clobbering unrelated fields with `null` when Hasura applies the `_set`.
  */
-export async function buildUpdateVariables(update: DiveUpdate): Promise<UpdateVariables> {
-  const { affiliate_id } = getSession();
+export async function buildUpdateVariables(
+  ctx: PadiContext,
+  update: DiveUpdate,
+): Promise<UpdateVariables> {
   const { diveId, ...patch } = update;
-  const existing = await getDive(diveId);
+  const existing = await getDive(ctx, diveId);
   if (!existing) throw new Error(`Dive ${diveId} not found`);
 
   const pick = <K extends keyof typeof patch>(key: K): (typeof patch)[K] | undefined => {
@@ -65,7 +66,7 @@ export async function buildUpdateVariables(update: DiveUpdate): Promise<UpdateVa
   return {
     id: diveId,
     general: {
-      affiliate_id,
+      affiliate_id: ctx.affiliateId,
       log_type: pick('log_type') ?? existing.log_type ?? 'Recreational',
       log_course: pick('log_course') ?? existing.log_course,
       log_number: pick('log_number') ?? existing.log_number,
@@ -125,9 +126,9 @@ export async function buildUpdateVariables(update: DiveUpdate): Promise<UpdateVa
   };
 }
 
-export async function updateDive(update: DiveUpdate): Promise<void> {
-  const variables = await buildUpdateVariables(update);
-  await graphql({
+export async function updateDive(ctx: PadiContext, update: DiveUpdate): Promise<void> {
+  const variables = await buildUpdateVariables(ctx, update);
+  await graphql(ctx, {
     operationName: 'UpdateRecreationalDiveLog',
     query: MUTATION,
     variables: variables as unknown as Record<string, unknown>,

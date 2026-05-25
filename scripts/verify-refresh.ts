@@ -7,7 +7,7 @@
  *
  *   npm run verify-refresh
  */
-import { countDives } from '../src/operations/count-dives.js';
+import { countDives } from '../src/padi.js';
 import { authStatus, loadSession, refreshIdTokenNow } from '../src/session.js';
 
 async function main(): Promise<void> {

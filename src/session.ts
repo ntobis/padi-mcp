@@ -18,12 +18,12 @@ import { fileURLToPath } from 'node:url';
 import {
   CognitoAuthError,
   type CognitoTokens,
+  decodeJwtClaims,
   defaultCognitoConfig,
   loginWithPassword,
   refreshTokens,
-} from './auth/cognito.js';
+} from '@padi-mcp/core';
 import { getCredentialStore } from './auth/credential-store.js';
-import { decodeJwtClaims } from './auth/jwt.js';
 
 export interface Session {
   endpoint: string;

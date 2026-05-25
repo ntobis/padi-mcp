@@ -295,8 +295,7 @@ async function main(): Promise<void> {
       };
       const depthOk = parsed.dive?.depth_time?.max_depth === 18;
       const aeOk =
-        JSON.stringify(parsed.dive?.equipment?.additional_equipment) ===
-        JSON.stringify(['Reel']);
+        JSON.stringify(parsed.dive?.equipment?.additional_equipment) === JSON.stringify(['Reel']);
       if (depthOk && aeOk) pass('padi_update_dive', 'depth + array patch ok');
       else fail('padi_update_dive', `depthOk=${depthOk} aeOk=${aeOk}`);
     }
@@ -310,8 +309,7 @@ async function main(): Promise<void> {
     else {
       const t = unwrapText(del.result);
       const parsed = JSON.parse(t) as { deleted?: number; strategy?: string; error?: string };
-      if (parsed.deleted === createdId)
-        pass('padi_delete_dive', `strategy=${parsed.strategy}`);
+      if (parsed.deleted === createdId) pass('padi_delete_dive', `strategy=${parsed.strategy}`);
       else fail('padi_delete_dive', t.slice(0, 200));
     }
 

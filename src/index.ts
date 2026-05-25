@@ -16,16 +16,21 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CognitoAuthError, DiveInput, DiveUpdate } from '@padi-mcp/core';
 import { z } from 'zod';
-import { CognitoAuthError } from './auth/cognito.js';
 import { buildSessionFromCurl } from './curl-parser.js';
-import { countDives } from './operations/count-dives.js';
-import { buildInsertGeneral, createDive } from './operations/create-dive.js';
-import { deleteDive, logDeletion } from './operations/delete-dive.js';
-import { getDive } from './operations/get-dive.js';
-import { listDives } from './operations/list-dives.js';
-import { searchDiveSites } from './operations/search-dive-sites.js';
-import { buildUpdateVariables, updateDive } from './operations/update-dive.js';
+import { logDeletion } from './deletion-log.js';
+import {
+  buildInsertGeneral,
+  buildUpdateVariables,
+  countDives,
+  createDive,
+  deleteDive,
+  getDive,
+  listDives,
+  searchDiveSites,
+  updateDive,
+} from './padi.js';
 import {
   type Session,
   SessionMissingError,
@@ -36,7 +41,6 @@ import {
   replaceSession,
   secondsUntilExpiry,
 } from './session.js';
-import { DiveInput, DiveUpdate } from './types.js';
 
 const SANDBOX_TITLE_PREFIX = 'MCPTEST_';
 const SANDBOX_DATE_CUTOFF = '1950-01-01';

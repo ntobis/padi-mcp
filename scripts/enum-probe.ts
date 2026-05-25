@@ -11,13 +11,9 @@
 import { randomUUID } from 'node:crypto';
 import { appendFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createDive } from '../src/operations/create-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
-import { getDive } from '../src/operations/get-dive.js';
-import { updateDive } from '../src/operations/update-dive.js';
-import { GraphQLError } from '../src/padi-client.js';
+import type { DiveInput } from '@padi-mcp/core';
+import { GraphQLError, createDive, deleteDive, getDive, updateDive } from '../src/padi.js';
 import { loadSession } from '../src/session.js';
-import type { DiveInput } from '../src/types.js';
 
 type Field =
   | 'log_type'
