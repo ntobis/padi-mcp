@@ -18,6 +18,7 @@ import {
   NeedsReloginError,
   NotConnectedError,
   _clearTokenCache,
+  getConnectionStatus,
   getPadiIdToken,
   getTenantContext,
 } from '../lib/tokens';
@@ -109,5 +110,34 @@ describe('getTenantContext', () => {
     const token = await ctx.getToken();
     expect(token).toContain('.');
     expect(core.refreshTokens).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('getConnectionStatus', () => {
+  it('reports not connected when the user has no connection', async () => {
+    const status = await getConnectionStatus(db, 'nobody');
+    expect(status).toMatchObject({ connected: false, status: null, affiliateId: null });
+  });
+
+  it('reports connected with affiliate id and no PADI call for an active connection', async () => {
+    await seedConnection('u_status', 'refresh-status');
+    const status = await getConnectionStatus(db, 'u_status');
+    expect(status.connected).toBe(true);
+    expect(status.status).toBe('active');
+    expect(status.affiliateId).toBe('14867369');
+    expect(status.padiUsername).toBe('u@x.com');
+    expect(status.connectedAt).not.toBeNull();
+    expect(core.refreshTokens).not.toHaveBeenCalled();
+  });
+
+  it('reports not connected (but with status) when the connection needs relogin', async () => {
+    await seedConnection('u_relogin', 'refresh-relogin');
+    await db
+      .update(schema.padiConnections)
+      .set({ status: 'needs_relogin' })
+      .where(eq(schema.padiConnections.workosUserId, 'u_relogin'));
+    const status = await getConnectionStatus(db, 'u_relogin');
+    expect(status.connected).toBe(false);
+    expect(status.status).toBe('needs_relogin');
   });
 });

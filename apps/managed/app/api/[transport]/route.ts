@@ -5,15 +5,35 @@
  * /.well-known/oauth-protected-resource), then sends a bearer token we verify
  * per request. The verified user id is the tenant key — never taken from tool
  * arguments. Each tool loads that tenant's PADI connection, mints an ID token,
- * and calls PADI.
+ * and calls PADI. Writes (create/update/delete) are recorded in audit_log.
  */
-import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
-import { countDives } from '@padi-mcp/core';
-import { createMcpHandler, withMcpAuth } from 'mcp-handler';
 import { connectUrl } from '@/lib/current-user';
-import { getDb } from '@/lib/db/client';
+import { type AppDb, getDb } from '@/lib/db/client';
+import { auditLog } from '@/lib/db/schema';
 import { verifyWorkosToken } from '@/lib/mcp-auth';
-import { NeedsReloginError, NotConnectedError, getTenantContext } from '@/lib/tokens';
+import {
+  NeedsReloginError,
+  NotConnectedError,
+  getConnectionStatus,
+  getTenantContext,
+} from '@/lib/tokens';
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import {
+  DiveInput,
+  DiveUpdate,
+  type PadiContext,
+  countDives,
+  createDive,
+  deleteDive,
+  getDive,
+  listDives,
+  searchDiveSites,
+  updateDive,
+} from '@padi-mcp/core';
+import { createMcpHandler, withMcpAuth } from 'mcp-handler';
+import { z } from 'zod';
+
+type Extra = { authInfo?: AuthInfo };
 
 function text(value: unknown) {
   return {
@@ -26,12 +46,55 @@ function text(value: unknown) {
   };
 }
 
-function userIdFrom(extra: { authInfo?: AuthInfo }): string {
+function userIdFrom(extra: Extra): string {
   const id = extra.authInfo?.extra?.userId;
   if (typeof id !== 'string' || !id) {
     throw new Error('Authenticated user id missing from token.');
   }
   return id;
+}
+
+/**
+ * Resolve the tenant, run the operation against its PADI context, and map the
+ * two "reconnect needed" cases to friendly results with a connect URL. Any
+ * other error propagates as a tool error.
+ */
+async function withTenant(
+  extra: Extra,
+  fn: (scope: { ctx: PadiContext; db: AppDb; userId: string }) => Promise<unknown>,
+) {
+  const userId = userIdFrom(extra);
+  const db = getDb();
+  try {
+    const ctx = await getTenantContext(db, userId);
+    return text(await fn({ ctx, db, userId }));
+  } catch (e) {
+    if (e instanceof NotConnectedError) {
+      return text({
+        error: 'not_connected',
+        message: 'Connect your PADI account first.',
+        connect_url: connectUrl(),
+      });
+    }
+    if (e instanceof NeedsReloginError) {
+      return text({
+        error: 'needs_relogin',
+        message: 'Your PADI session expired. Reconnect.',
+        connect_url: connectUrl(),
+      });
+    }
+    throw e;
+  }
+}
+
+function recordWrite(
+  db: AppDb,
+  userId: string,
+  action: 'create_dive' | 'update_dive' | 'delete_dive',
+  diveId: number | null,
+  detail: Record<string, unknown>,
+): Promise<unknown> {
+  return db.insert(auditLog).values({ workosUserId: userId, action, diveId, detail });
 }
 
 const base = createMcpHandler(
@@ -47,35 +110,145 @@ const base = createMcpHandler(
     );
 
     server.registerTool(
+      'padi_connection_status',
+      {
+        title: 'PADI connection status',
+        description:
+          'Report whether the caller has a PADI account connected, its status, affiliate id, ' +
+          'and when the session was last refreshed. Makes no PADI API call.',
+        inputSchema: {},
+      },
+      async (_args, extra) => {
+        const userId = userIdFrom(extra as Extra);
+        const status = await getConnectionStatus(getDb(), userId);
+        return text(status.connected ? status : { ...status, connect_url: connectUrl() });
+      },
+    );
+
+    server.registerTool(
       'padi_count_dives',
       {
         title: 'Count dives',
         description: "Return the total number of dives in the caller's connected PADI logbook.",
         inputSchema: {},
       },
-      async (_args, extra) => {
-        try {
-          const userId = userIdFrom(extra as { authInfo?: AuthInfo });
-          const ctx = await getTenantContext(getDb(), userId);
-          return text({ count: await countDives(ctx) });
-        } catch (e) {
-          if (e instanceof NotConnectedError) {
-            return text({
-              error: 'not_connected',
-              message: 'Connect your PADI account first.',
-              connect_url: connectUrl(),
-            });
-          }
-          if (e instanceof NeedsReloginError) {
-            return text({
-              error: 'needs_relogin',
-              message: 'Your PADI session expired. Reconnect.',
-              connect_url: connectUrl(),
-            });
-          }
-          throw e;
-        }
+      async (_args, extra) =>
+        withTenant(extra as Extra, async ({ ctx }) => ({ count: await countDives(ctx) })),
+    );
+
+    server.registerTool(
+      'padi_list_dives',
+      {
+        title: 'List dives',
+        description:
+          'List dives, most recent first. Returns summaries (id, title, date, location, ' +
+          'status). No side effects.',
+        inputSchema: {
+          limit: z.number().int().min(1).max(200).optional(),
+          offset: z.number().int().min(0).optional(),
+        },
       },
+      async (args, extra) =>
+        withTenant(extra as Extra, async ({ ctx }) => await listDives(ctx, args)),
+    );
+
+    server.registerTool(
+      'padi_get_dive',
+      {
+        title: 'Get dive',
+        description: 'Fetch the full record for one dive by id. No side effects.',
+        inputSchema: { diveId: z.number().int().positive() },
+      },
+      async ({ diveId }, extra) =>
+        withTenant(extra as Extra, async ({ ctx }) => {
+          const dive = await getDive(ctx, diveId);
+          return dive ?? { error: 'not_found', diveId };
+        }),
+    );
+
+    server.registerTool(
+      'padi_search_dive_sites',
+      {
+        title: 'Search dive sites',
+        description:
+          'Autocomplete dive site names. The query is wrapped with SQL LIKE wildcards ' +
+          'automatically — pass a plain substring. No side effects.',
+        inputSchema: { query: z.string().min(1) },
+      },
+      async ({ query }, extra) =>
+        withTenant(extra as Extra, async ({ ctx }) => await searchDiveSites(ctx, query)),
+    );
+
+    server.registerTool(
+      'padi_create_dive',
+      {
+        title: 'Create dive',
+        description:
+          'Create a new dive log. Required: dive_title, dive_date (YYYY-MM-DD). Defaults: ' +
+          'log_type=Recreational, status=Publish. Returns the new dive id and the full record ' +
+          'after re-fetch. SIDE EFFECT: writes to the connected PADI logbook.',
+        inputSchema: DiveInput.shape,
+      },
+      async (args, extra) =>
+        withTenant(extra as Extra, async ({ ctx, db, userId }) => {
+          const input = DiveInput.parse(args);
+          const id = await createDive(ctx, input);
+          const dive = await getDive(ctx, id);
+          await recordWrite(db, userId, 'create_dive', id, {
+            dive_title: input.dive_title,
+            dive_date: input.dive_date,
+          });
+          return { created: { id }, dive };
+        }),
+    );
+
+    server.registerTool(
+      'padi_update_dive',
+      {
+        title: 'Update dive',
+        description:
+          'Update an existing dive. Pass diveId plus any subset of fields; missing fields are ' +
+          'preserved (the dive is read first and merged). Returns the dive after re-fetch. ' +
+          'SIDE EFFECT: writes to the connected PADI logbook.',
+        inputSchema: DiveUpdate.shape,
+      },
+      async (args, extra) =>
+        withTenant(extra as Extra, async ({ ctx, db, userId }) => {
+          const input = DiveUpdate.parse(args);
+          await updateDive(ctx, input);
+          const dive = await getDive(ctx, input.diveId);
+          await recordWrite(db, userId, 'update_dive', input.diveId, {
+            fields: Object.keys(input).filter((k) => k !== 'diveId'),
+          });
+          return { updated: input.diveId, dive };
+        }),
+    );
+
+    server.registerTool(
+      'padi_delete_dive',
+      {
+        title: 'Delete dive',
+        description:
+          'Delete a dive. Tries hard-delete → per-table → soft-delete until one succeeds. ' +
+          'Requires confirm=true. SIDE EFFECT: irreversibly removes the dive from the PADI ' +
+          'logbook.',
+        inputSchema: {
+          diveId: z.number().int().positive(),
+          confirm: z.literal(true),
+        },
+      },
+      async ({ diveId }, extra) =>
+        withTenant(extra as Extra, async ({ ctx, db, userId }) => {
+          const existing = await getDive(ctx, diveId);
+          if (!existing) return { error: 'not_found', diveId };
+          const strategy = await deleteDive(ctx, diveId);
+          await recordWrite(db, userId, 'delete_dive', diveId, {
+            strategy,
+            dive_title: existing.dive_title,
+            dive_date: existing.dive_date,
+          });
+          return { deleted: diveId, strategy };
+        }),
     );
   },
   {

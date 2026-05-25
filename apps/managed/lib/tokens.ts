@@ -78,6 +78,41 @@ export async function getPadiIdToken(
   }
 }
 
+export interface ConnectionStatus {
+  connected: boolean;
+  status: string | null; // active | needs_relogin | revoked
+  affiliateId: string | null;
+  padiUsername: string | null;
+  connectedAt: string | null;
+  lastRefreshedAt: string | null;
+}
+
+/** Read-only connection status for a tenant. Makes no PADI API call. */
+export async function getConnectionStatus(db: AppDb, userId: string): Promise<ConnectionStatus> {
+  const [conn] = await db
+    .select()
+    .from(padiConnections)
+    .where(eq(padiConnections.workosUserId, userId));
+  if (!conn) {
+    return {
+      connected: false,
+      status: null,
+      affiliateId: null,
+      padiUsername: null,
+      connectedAt: null,
+      lastRefreshedAt: null,
+    };
+  }
+  return {
+    connected: conn.status === 'active',
+    status: conn.status,
+    affiliateId: conn.affiliateId,
+    padiUsername: conn.padiUsername,
+    connectedAt: conn.createdAt.toISOString(),
+    lastRefreshedAt: conn.lastRefreshedAt?.toISOString() ?? null,
+  };
+}
+
 /** Build the PadiContext for a tenant. Used by the MCP tools. */
 export async function getTenantContext(db: AppDb, userId: string): Promise<PadiContext> {
   const [conn] = await db
