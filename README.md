@@ -83,6 +83,27 @@ Add this to `~/Library/Application Support/Claude/claude_desktop_config.json`
 Then `Cmd-Q` Claude Desktop and reopen it. The PADI tools appear in the
 tool picker.
 
+The server resolves `inputs/session.json` relative to its own location
+(next to `dist/`), not the launch directory — so it works regardless of
+the working directory Claude Desktop starts it in. To keep the session
+file somewhere else, set `PADI_SESSION_PATH` to an absolute path:
+
+```json
+{
+  "mcpServers": {
+    "padi": {
+      "command": "node",
+      "args": ["/absolute/path/to/padi-mcp/dist/index.js"],
+      "env": { "PADI_SESSION_PATH": "/absolute/path/to/session.json" }
+    }
+  }
+}
+```
+
+When the JWT expires, call the `padi_refresh_session` tool with a fresh
+cURL — no restart needed. The response includes `persisted` and
+`session_path` so you can confirm where it was saved.
+
 ## Sandbox conventions
 
 The MCP server **refuses to delete** any dive unless:
