@@ -5,11 +5,9 @@
  * variable typed, reads back the raw value.
  */
 import { randomUUID } from 'node:crypto';
-import { createDive } from '../src/operations/create-dive.js';
-import { deleteDive } from '../src/operations/delete-dive.js';
-import { GraphQLError, graphql } from '../src/padi-client.js';
+import type { DiveInput } from '@padi-mcp/core';
+import { GraphQLError, createDive, deleteDive, graphql } from '../src/padi.js';
 import { loadSession } from '../src/session.js';
-import type { DiveInput } from '../src/types.js';
 
 const SANDBOX: DiveInput = {
   dive_title: `MCPTEST_${randomUUID()}`,

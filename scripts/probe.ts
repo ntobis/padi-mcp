@@ -1,8 +1,5 @@
 #!/usr/bin/env tsx
-import { countDives } from '../src/operations/count-dives.js';
-import { getDive } from '../src/operations/get-dive.js';
-import { listDives } from '../src/operations/list-dives.js';
-import { searchDiveSites } from '../src/operations/search-dive-sites.js';
+import { countDives, getDive, listDives, searchDiveSites } from '../src/padi.js';
 /**
  * Phase-1 self-verification CLI. Calls operations directly against the
  * live API and prints results. Intended for manual smoke testing.
