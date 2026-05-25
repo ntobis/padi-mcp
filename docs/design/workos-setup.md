@@ -19,17 +19,25 @@ up to 1M monthly active users.
 ## 3. Configure AuthKit (the user login)
 - Dashboard → **AuthKit** → set it up / enable.
 - Enable at least one sign-in method (Email + Password or Magic Auth is fine for dev).
-- **Redirects**: add a sign-in callback URI `http://localhost:3000/callback`
-  and a logout redirect `http://localhost:3000`.
+- **Redirects are configured per application now** (they moved off the old
+  top-level Redirects page): Dashboard → **Applications → select your application
+  → Redirects**. Add a sign-in callback `http://localhost:3000/callback` and a
+  logout redirect `http://localhost:3000`. ("View all applications to manage
+  redirects" is the hint the dashboard shows.)
 - Note your **AuthKit domain** (e.g. `https://<slug>.authkit.app`) — shown in
   the AuthKit configuration.
 
 ## 4. Enable MCP auth (Dynamic Client Registration + CIMD)
-This is what lets Claude self-register and authenticate.
-- Dashboard → **Applications → Configuration → Dynamic Client Registration → Manage**:
-  enable **DCR** and add default scopes `openid profile email`.
-- Dashboard → **Connect → Configuration → MCP Auth settings**: enable both
-  **Client ID Metadata Document (CIMD)** and **Dynamic Client Registration (DCR)**.
+This is what lets Claude self-register and authenticate. The exact menu path
+shifts as WorkOS evolves; the **targets** are what matter — find the MCP /
+Dynamic Client Registration settings (under **Applications → Configuration**
+and/or **Connect**) and enable:
+- **Dynamic Client Registration (DCR)** — and add default scopes `openid profile email`.
+- **Client ID Metadata Document (CIMD)**.
+
+If you can't find these toggles, tell me what sections your dashboard shows and
+I'll adjust — and I'll confirm the exact server-side wiring against WorkOS's
+current MCP example when I build this phase.
 
 ## 5. Generate the session cookie secret (local only)
 ```bash
@@ -56,10 +64,13 @@ Keep `WORKOS_API_KEY` and `WORKOS_COOKIE_PASSWORD` in your local `.env.local` �
 I never need their values to write or wire the code.
 
 ## What I'll build once provisioned
-- Install `@workos-inc/authkit-nextjs`; add middleware + `app/callback/route.ts`.
-- Gate `/connect` behind AuthKit and replace the `getCurrentUserId()` stub with
-  the authenticated WorkOS user id (the real tenant key).
-- Add `withMcpAuth` to `/api/mcp` so the endpoint returns `401` +
-  `WWW-Authenticate` with Protected Resource Metadata, and verifies WorkOS
-  bearer tokens (JWKS) on every call.
+- Install `@workos-inc/authkit-nextjs`; add `app/callback/route.ts`
+  (`export const GET = handleAuth()`) and, since we're on **Next.js 16**, a
+  `proxy.ts` using `authkit()` + `handleAuthkitHeaders()` (v16 replaced the old
+  `middleware.ts` / `authkitMiddleware`).
+- Gate `/connect` behind AuthKit (`withAuth()`), and replace the
+  `getCurrentUserId()` stub with the authenticated `user.id` (the real tenant key).
+- Protect `/api/mcp` so it returns `401` + `WWW-Authenticate` with Protected
+  Resource Metadata and verifies WorkOS bearer tokens (JWKS) on every call —
+  exact wiring confirmed against WorkOS's current MCP example at build time.
 - Verify the full OAuth handshake locally with the MCP Inspector / a client.
