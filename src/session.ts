@@ -10,8 +10,9 @@
  * signature — Hasura/PADI does that server-side — we only decode the
  * payload to read `exp` and `sub`.
  */
-import { readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export interface Session {
   endpoint: string;
@@ -50,7 +51,20 @@ export function decodeJwt(authHeader: string): JwtClaims | null {
   }
 }
 
-const SESSION_PATH = resolve(process.cwd(), 'inputs/session.json');
+/**
+ * Resolve inputs/session.json relative to this module, NOT process.cwd().
+ *
+ * When Claude Desktop launches the server (`node /abs/path/dist/index.js`)
+ * the working directory is the OS default (often `/`), so a cwd-relative
+ * path would point at `/inputs/session.json` — unreadable and unwritable.
+ * Resolving from the module location works whether we're running the
+ * compiled `dist/session.js` or the source `src/session.ts` via tsx, since
+ * `inputs/` sits one level up from both. `PADI_SESSION_PATH` overrides
+ * everything for users who want to keep the session file elsewhere.
+ */
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+export const SESSION_PATH =
+  process.env.PADI_SESSION_PATH ?? resolve(MODULE_DIR, '../inputs/session.json');
 const EXPIRY_WARN_SECONDS = 5 * 60;
 
 let current: Session | null = null;
@@ -61,8 +75,9 @@ export async function loadSession(path: string = SESSION_PATH): Promise<Session>
     raw = await readFile(path, 'utf8');
   } catch {
     throw new SessionMissingError(
-      `inputs/session.json not found at ${path}. Provide a cURL capture from Chrome ` +
-        `DevTools and run \`npm run curl-to-session\` to create it.`,
+      `session.json not found at ${path}. Either call the padi_refresh_session tool with a ` +
+        `fresh cURL from Chrome DevTools, run \`npm run curl-to-session\` to create it, or set ` +
+        `the PADI_SESSION_PATH env var to point at an existing session file.`,
     );
   }
   const parsed = JSON.parse(raw) as Session;
@@ -83,11 +98,28 @@ export function getSession(): Session {
   return current;
 }
 
-export async function replaceSession(next: Session, path: string = SESSION_PATH): Promise<Session> {
+/**
+ * Set the in-memory session and try to persist it to disk. The in-memory
+ * update always succeeds; the disk write is best-effort so a read-only or
+ * unexpected filesystem doesn't block the running process (the refreshed
+ * session stays usable until the server restarts). `persisted` reports
+ * whether the file was written.
+ */
+export async function replaceSession(
+  next: Session,
+  path: string = SESSION_PATH,
+): Promise<{ session: Session; persisted: boolean; path: string; persistError?: string }> {
   current = next;
-  await writeFile(path, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
   warnIfExpiring(next);
-  return next;
+  try {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+    return { session: next, persisted: true, path };
+  } catch (e) {
+    const persistError = e instanceof Error ? e.message : String(e);
+    console.error(`session: refreshed in memory but could not persist to ${path}: ${persistError}`);
+    return { session: next, persisted: false, path, persistError };
+  }
 }
 
 export function isExpired(session: Session = getSession(), nowSec = Date.now() / 1000): boolean {

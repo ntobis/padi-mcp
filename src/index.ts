@@ -266,12 +266,15 @@ async function main(): Promise<void> {
           cognito_sub: '',
         };
       }
-      await replaceSession(next);
+      const { persisted, path, persistError } = await replaceSession(next);
       const secs = secondsUntilExpiry();
       return asText({
         refreshed: true,
         affiliate_id: next.affiliate_id,
         expires_in_seconds: secs,
+        persisted,
+        session_path: path,
+        ...(persistError ? { persist_error: persistError } : {}),
       });
     },
   );
