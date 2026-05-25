@@ -17,6 +17,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import { CognitoAuthError } from './auth/cognito.js';
 import { buildSessionFromCurl } from './curl-parser.js';
 import { countDives } from './operations/count-dives.js';
 import { buildInsertGeneral, createDive } from './operations/create-dive.js';
@@ -28,7 +29,10 @@ import { buildUpdateVariables, updateDive } from './operations/update-dive.js';
 import {
   type Session,
   SessionMissingError,
+  authStatus,
   loadSession,
+  login,
+  logout,
   replaceSession,
   secondsUntilExpiry,
 } from './session.js';
@@ -88,6 +92,67 @@ async function main(): Promise<void> {
       }
       return asText({ status: 'pong', session: expiry, time: new Date().toISOString() });
     },
+  );
+
+  server.registerTool(
+    'padi_login',
+    {
+      description:
+        'Log in to PADI with your email and password. The server authenticates against ' +
+        "PADI's Cognito and stores a refresh token so it can keep itself signed in for ~30 days " +
+        '— you do NOT need to capture a cURL or re-log-in every hour. Set remember_password=true ' +
+        'to also store your password (in the macOS Keychain when available) so it can re-login ' +
+        'automatically even after the refresh token expires. Your password is never echoed or logged.',
+      inputSchema: {
+        email: z.string().min(1),
+        password: z.string().min(1),
+        remember_password: z.boolean().optional(),
+      },
+    },
+    async ({ email, password, remember_password }) => {
+      try {
+        await login(email, password, remember_password ?? false);
+        const status = authStatus();
+        return asText({
+          logged_in: true,
+          affiliate_id: status.affiliate_id,
+          id_token_expires_in_seconds: status.id_token_expires_in_seconds,
+          refresh_token_stored: status.has_refresh_token,
+          password_stored: remember_password ?? false,
+        });
+      } catch (e) {
+        if (e instanceof CognitoAuthError) {
+          return asText({ logged_in: false, error: e.code, message: e.message });
+        }
+        return asText({ logged_in: false, error: 'unknown', message: String(e) });
+      }
+    },
+  );
+
+  server.registerTool(
+    'padi_logout',
+    {
+      description:
+        'Clear the stored PADI session: removes the refresh token, cached ID token, and any ' +
+        'stored password. You will need to padi_login again afterwards.',
+      inputSchema: {},
+    },
+    async () => {
+      await logout();
+      return asText({ logged_out: true });
+    },
+  );
+
+  server.registerTool(
+    'padi_auth_status',
+    {
+      description:
+        'Report the current PADI auth state: whether you are logged in, whether a refresh token ' +
+        'is present (auto-refresh enabled), seconds until the current ID token expires, and the ' +
+        'affiliate id. No secrets are returned.',
+      inputSchema: {},
+    },
+    async () => asText(authStatus()),
   );
 
   server.registerTool(
@@ -236,9 +301,11 @@ async function main(): Promise<void> {
     'padi_refresh_session',
     {
       description:
-        'Replace inputs/session.json with a fresh capture. Pass either `curl` (the raw cURL ' +
-        'copied from Chrome DevTools Network panel) OR the four explicit fields. The cURL ' +
-        'path is preferred because it picks up the User-Agent automatically.',
+        'ADVANCED / fallback. Replace the session from a raw cURL captured in Chrome DevTools ' +
+        '(or explicit fields). Prefer padi_login instead — it logs in with email+password and ' +
+        'enables automatic token refresh. Use this only if you cannot log in directly (e.g. an ' +
+        'account that requires the browser flow). A cURL-only session has no refresh token, so ' +
+        'it still expires after ~1 hour.',
       inputSchema: {
         curl: z.string().optional(),
         authorization: z.string().optional(),
