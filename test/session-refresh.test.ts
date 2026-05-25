@@ -1,19 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the Cognito core so no network is hit and we control token minting.
-vi.mock('../src/auth/cognito.js', () => ({
-  defaultCognitoConfig: () => ({ region: 'us-west-2', clientId: 'x' }),
-  CognitoAuthError: class CognitoAuthError extends Error {
-    constructor(
-      public code: string,
-      message: string,
-    ) {
-      super(message);
-    }
-  },
-  loginWithPassword: vi.fn(),
-  refreshTokens: vi.fn(),
-}));
+// Stub only the network-touching Cognito calls; keep the real decodeJwtClaims,
+// CognitoAuthError, and defaultCognitoConfig from the core package.
+vi.mock('@padi-mcp/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@padi-mcp/core')>();
+  return { ...actual, loginWithPassword: vi.fn(), refreshTokens: vi.fn() };
+});
 
 // No password stored by default.
 const loadPassword = vi.fn(async () => null as string | null);
@@ -36,7 +28,7 @@ vi.mock('node:fs/promises', () => ({
   chmod: vi.fn(async () => {}),
 }));
 
-import * as cognito from '../src/auth/cognito.js';
+import * as cognito from '@padi-mcp/core';
 import { SessionNeedsLoginError, getValidIdToken, replaceSession } from '../src/session.js';
 
 function jwt(claims: Record<string, unknown>): string {

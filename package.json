@@ -11,8 +11,10 @@
   "bin": {
     "padi-mcp": "dist/index.js"
   },
+  "workspaces": ["packages/*"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build:core": "npm run build --workspace @padi-mcp/core",
+    "build": "npm run build:core && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
@@ -33,6 +35,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "@padi-mcp/core": "*",
     "zod": "^3.23.8"
   },
   "devDependencies": {

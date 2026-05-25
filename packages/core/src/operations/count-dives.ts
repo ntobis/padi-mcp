@@ -1,5 +1,4 @@
-import { graphql } from '../padi-client.js';
-import { getSession } from '../session.js';
+import { type PadiContext, graphql } from '../padi-client.js';
 
 const QUERY = `query logbook_logs_aggregate($affiliate_id: Int!) {
   logbook_logs_aggregate(where: {affiliate_id: {_eq: $affiliate_id}}) {
@@ -7,14 +6,13 @@ const QUERY = `query logbook_logs_aggregate($affiliate_id: Int!) {
   }
 }`;
 
-export async function countDives(): Promise<number> {
-  const { affiliate_id } = getSession();
+export async function countDives(ctx: PadiContext): Promise<number> {
   const data = await graphql<{
     logbook_logs_aggregate: { aggregate: { count: number } };
-  }>({
+  }>(ctx, {
     operationName: 'logbook_logs_aggregate',
     query: QUERY,
-    variables: { affiliate_id: Number(affiliate_id) },
+    variables: { affiliate_id: Number(ctx.affiliateId) },
   });
   return data.logbook_logs_aggregate.aggregate.count;
 }
