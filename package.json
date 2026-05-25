@@ -11,7 +11,7 @@
   "bin": {
     "padi-mcp": "dist/index.js"
   },
-  "workspaces": ["packages/*"],
+  "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "build:core": "npm run build --workspace @padi-mcp/core",
     "build": "npm run build:core && tsc -p tsconfig.build.json",
