@@ -7,19 +7,25 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
     "mcp-http-smoke": "tsx scripts/mcp-http-smoke.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@padi-mcp/core": "*",
+    "drizzle-orm": "^0.45.2",
     "mcp-handler": "^1.1.0",
     "next": "^16.2.6",
+    "postgres": "^3.4.9",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.4.5",
     "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.10"
   }
 }
