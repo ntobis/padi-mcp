@@ -1,0 +1,586 @@
+/* ------------------------------------------------------------------ *
+ * PADI MCP — managed service global styles.
+ * An ocean-descent theme: bright tropical surface up top fading to the
+ * abyss, a frosted card, and restrained motion. Mobile-first (the connect
+ * flow runs on a phone). Plain CSS — no framework, no build deps.
+ * ------------------------------------------------------------------ */
+
+:root {
+  --abyss: #02132b;
+  --deep: #063763;
+  --ocean: #0a6aa0;
+  --lagoon: #16a7c9;
+  --surface: #5fd1e6;
+  --foam: #eafaff;
+
+  --ink: #0a2540;
+  --ink-soft: #58748d;
+  --line: #dbe8f1;
+  --field: #f3f8fb;
+
+  --cta1: #00c2e0;
+  --cta2: #0077b6;
+
+  --ok: #0a8a5f;
+  --ok-bg: #e7f7f0;
+  --ok-line: #b9e7d4;
+  --err: #b3302f;
+  --err-bg: #fdecec;
+  --err-line: #f5c9c9;
+
+  --ring: rgba(22, 167, 201, 0.32);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100dvh;
+  color: var(--foam);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(
+      135% 95% at 50% -22%,
+      #62d3e8 0%,
+      #1f93c2 22%,
+      #0a5f95 44%,
+      #063763 66%,
+      var(--abyss) 100%
+    );
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Soft descending light shafts from the surface. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10% 0 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    104deg,
+    rgba(255, 255, 255, 0.07) 0 3px,
+    transparent 3px 38px
+  );
+  -webkit-mask-image: radial-gradient(75% 55% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(75% 55% at 50% 0%, #000 25%, transparent 78%);
+  animation: drift 19s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-3.5%);
+  }
+  to {
+    transform: translateX(3.5%);
+  }
+}
+
+/* Rising bubbles. */
+.bubbles {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bubbles i {
+  position: absolute;
+  bottom: -12vh;
+  left: var(--x);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  opacity: 0;
+  animation: rise var(--d) linear infinite;
+  animation-delay: var(--delay);
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.55;
+  }
+  88% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateY(-118vh) translateX(var(--drift));
+    opacity: 0;
+  }
+}
+
+/* ----------------------------- layout ----------------------------- */
+
+.auth-wrap {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 432px;
+  padding: 40px 36px 26px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 34px 80px rgba(2, 19, 43, 0.46),
+    0 2px 0 rgba(255, 255, 255, 0.55) inset;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--ink);
+  animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ----------------------------- brand ------------------------------ */
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.brand-badge {
+  width: 66px;
+  height: 66px;
+  border-radius: 21px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(140deg, var(--surface), var(--cta2));
+  box-shadow: 0 12px 26px rgba(0, 119, 182, 0.45);
+}
+
+.brand-badge svg {
+  width: 36px;
+  height: 36px;
+}
+
+.brand-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.auth-title {
+  margin: 0;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 750;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.auth-sub {
+  margin: 11px 0 26px;
+  text-align: center;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* ----------------------------- form ------------------------------- */
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.field-control {
+  position: relative;
+}
+
+.field-input {
+  width: 100%;
+  padding: 13px 14px;
+  font-size: 16px; /* >=16px avoids iOS focus zoom */
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.field-input::placeholder {
+  color: #9fb3c4;
+}
+
+.field-input:focus {
+  border-color: var(--lagoon);
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.field-input.has-toggle {
+  padding-right: 48px;
+}
+
+.toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.toggle:hover {
+  color: var(--ocean);
+  background: #eef4f9;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--lagoon);
+  outline-offset: 2px;
+}
+
+.toggle svg {
+  width: 19px;
+  height: 19px;
+}
+
+.cta {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  border: 0;
+  border-radius: 13px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--cta1), var(--cta2));
+  box-shadow: 0 12px 26px rgba(0, 119, 182, 0.42);
+  transition: transform 0.12s, box-shadow 0.2s, filter 0.2s;
+}
+
+.cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(0, 119, 182, 0.52);
+  filter: saturate(1.08);
+}
+
+.cta:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.cta:disabled {
+  cursor: progress;
+  filter: saturate(0.9) opacity(0.85);
+}
+
+.spinner {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reassure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.reassure svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ok);
+  flex: 0 0 auto;
+}
+
+/* ----------------------------- alerts ----------------------------- */
+
+.alert {
+  margin-top: 18px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  animation: cardIn 0.35s ease both;
+}
+
+.alert svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex: 0 0 auto;
+}
+
+.alert-err {
+  background: var(--err-bg);
+  color: var(--err);
+  border-color: var(--err-line);
+}
+
+/* --------------------------- success ------------------------------ */
+
+.success {
+  text-align: center;
+  padding: 4px 0 2px;
+}
+
+.success-badge {
+  width: 74px;
+  height: 74px;
+  margin: 6px auto 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(140deg, #1ec79c, var(--ok));
+  box-shadow: 0 14px 30px rgba(10, 138, 95, 0.42);
+  animation: pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.success-badge svg {
+  width: 38px;
+  height: 38px;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.success h2 {
+  margin: 0 0 8px;
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.success p {
+  margin: 0 auto;
+  max-width: 32ch;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.success .hint {
+  margin-top: 18px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--field);
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.success .hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #e3edf4;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+
+/* ----------------------------- footer ----------------------------- */
+
+.card-foot {
+  margin-top: 22px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #8aa0b3;
+}
+
+/* ------------------------------ home ------------------------------ */
+
+.home {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  text-align: center;
+}
+
+.home-inner {
+  max-width: 560px;
+  animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.home .brand-badge {
+  margin: 0 auto 22px;
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+}
+
+.home .brand-badge svg {
+  width: 42px;
+  height: 42px;
+}
+
+.home h1 {
+  margin: 0 0 14px;
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 760;
+  letter-spacing: -0.025em;
+  color: #fff;
+}
+
+.home p {
+  margin: 0 auto 28px;
+  max-width: 44ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(234, 250, 255, 0.85);
+}
+
+.endpoint {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  color: #eafaff;
+}
+
+.endpoint span {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(234, 250, 255, 0.6);
+}
+
+.home-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 28px;
+  padding: 13px 26px;
+  font-size: 15.5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--deep);
+  background: #fff;
+  border-radius: 13px;
+  box-shadow: 0 14px 30px rgba(2, 19, 43, 0.32);
+  transition: transform 0.12s, box-shadow 0.2s;
+}
+
+.home-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 38px rgba(2, 19, 43, 0.42);
+}
+
+/* --------------------------- responsive --------------------------- */
+
+@media (max-width: 420px) {
+  .auth-card {
+    padding: 32px 22px 22px;
+    border-radius: 22px;
+  }
+  .auth-title {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  .bubbles i,
+  .auth-card,
+  .home-inner,
+  .success-badge,
+  .alert,
+  .spinner {
+    animation: none !important;
+  }
+}

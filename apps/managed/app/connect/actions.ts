@@ -24,7 +24,7 @@ export async function connectAction(_prev: ConnectState | null, formData: FormDa
     const { affiliateId } = await connectPadiAccount(getDb(), user.id, email, password);
     return {
       ok: true,
-      message: `PADI account connected (affiliate ${affiliateId}). Go back to Claude and try "count my dives".`,
+      message: `Your PADI account is connected — affiliate ${affiliateId}.`,
     };
   } catch (e) {
     if (e instanceof CognitoAuthError) {
