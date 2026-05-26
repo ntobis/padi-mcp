@@ -153,8 +153,32 @@ async function step4(): Promise<void> {
   }
 }
 
+/**
+ * Detect a sandbox/proxy denial (e.g. Claude Code's network allowlist returns
+ * 403 + `x-deny-reason: host_not_allowed`). Such a block makes every check a
+ * false negative, so we bail with clear guidance instead of reporting bogus
+ * "auth not enforced" failures.
+ */
+async function ensureReachable(): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${base}/connect`, { redirect: 'manual' });
+  } catch {
+    return; // genuine network errors are surfaced per-step below
+  }
+  const deny = res.headers.get('x-deny-reason');
+  if (deny) {
+    console.error(`This environment cannot reach ${base} (x-deny-reason: ${deny}).`);
+    console.error('That blocks every check below, so they would be false negatives.');
+    console.error('Run this pre-flight from a machine that can reach the deployment:');
+    console.error(`  npm run p7-preflight -w @padi-mcp/managed -- ${base}`);
+    process.exit(3);
+  }
+}
+
 async function main(): Promise<void> {
   console.log(`Pre-flight against ${base}\n`);
+  await ensureReachable();
   const prmUrl = await step1();
   let as: string | null = null;
   if (prmUrl) as = await step2(prmUrl);
