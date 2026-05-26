@@ -33,6 +33,11 @@ export function _clearTokenCache(): void {
   tokenCache.clear();
 }
 
+/** Drop a single tenant's cached minted token (e.g. on disconnect or erasure). */
+export function evictCachedToken(userId: string): void {
+  tokenCache.delete(userId);
+}
+
 export async function getPadiIdToken(
   db: AppDb,
   userId: string,

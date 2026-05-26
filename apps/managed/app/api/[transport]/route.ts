@@ -7,6 +7,7 @@
  * arguments. Each tool loads that tenant's PADI connection, mints an ID token,
  * and calls PADI. Writes (create/update/delete) are recorded in audit_log.
  */
+import { deleteTenantData, disconnectPadiAccount, exportTenantData } from '@/lib/account';
 import { connectUrl } from '@/lib/current-user';
 import { type AppDb, getDb } from '@/lib/db/client';
 import { auditLog } from '@/lib/db/schema';
@@ -113,6 +114,21 @@ async function withTenant(
     }
     throw e;
   }
+}
+
+/**
+ * Like withTenant but without loading a PADI context — for account-management
+ * tools (disconnect / export / delete) that act on our own stored data and must
+ * work even when the PADI connection is missing or needs re-login.
+ */
+async function withAccount(
+  extra: Extra,
+  fn: (scope: { db: AppDb; userId: string }) => Promise<unknown>,
+) {
+  const userId = userIdFrom(extra);
+  const toolLimit = await checkRateLimit(userId, 'tool');
+  if (!toolLimit.allowed) return rateLimited('tool', toolLimit.limit);
+  return text(await fn({ db: getDb(), userId }));
 }
 
 function recordWrite(
@@ -303,6 +319,56 @@ const base = createMcpHandler(
           });
           return { deleted: diveId, strategy };
         }),
+    );
+
+    server.registerTool(
+      'padi_disconnect',
+      {
+        title: 'Disconnect PADI account',
+        description:
+          'Revoke the stored link to your PADI account: deletes the envelope-encrypted refresh ' +
+          'token so this service can no longer access your logbook. Your dives in PADI are ' +
+          'untouched. Requires confirm=true. You can reconnect any time via the connect page.',
+        inputSchema: { confirm: z.literal(true) },
+      },
+      async (_args, extra) =>
+        withAccount(extra as Extra, async ({ db, userId }) => {
+          const { disconnected } = await disconnectPadiAccount(db, userId);
+          return disconnected
+            ? { disconnected: true, message: 'Your PADI account has been disconnected.' }
+            : { disconnected: false, message: 'No PADI account was connected.' };
+        }),
+    );
+
+    server.registerTool(
+      'padi_export_my_data',
+      {
+        title: 'Export my stored data',
+        description:
+          'Return everything this service stores about you: your account record, PADI connection ' +
+          'metadata (affiliate id, username, status, timestamps), and your audit log. The ' +
+          'encrypted PADI refresh token is never disclosed. No side effects.',
+        inputSchema: {},
+      },
+      async (_args, extra) =>
+        withAccount(extra as Extra, async ({ db, userId }) => await exportTenantData(db, userId)),
+    );
+
+    server.registerTool(
+      'padi_delete_my_data',
+      {
+        title: 'Delete all my data',
+        description:
+          'Permanently erase everything this service stores about you: your PADI connection ' +
+          '(including the encrypted token), your audit log, and your account record. Does NOT ' +
+          'touch your dives in PADI. Irreversible. Requires confirm=true.',
+        inputSchema: { confirm: z.literal(true) },
+      },
+      async (_args, extra) =>
+        withAccount(extra as Extra, async ({ db, userId }) => ({
+          deleted: await deleteTenantData(db, userId),
+          message: 'All your stored data has been deleted.',
+        })),
     );
   },
   {
