@@ -9,3 +9,4 @@ docs/sample-real-dive.json
 .DS_Store
 coverage/
 .vitest-cache/
+.vercel/

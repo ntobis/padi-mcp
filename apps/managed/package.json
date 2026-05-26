@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "cd ../.. && npm run build:core && cd apps/managed && next build",
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
@@ -30,6 +31,7 @@
     "@electric-sql/pglite": "^0.4.5",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "drizzle-kit": "^0.31.10"
+    "drizzle-kit": "^0.31.10",
+    "vitest": "^2.1.8"
   }
 }
