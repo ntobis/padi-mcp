@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "mcp-http-smoke": "tsx scripts/mcp-http-smoke.ts",
-    "connect-smoke": "tsx scripts/connect-smoke.ts"
+    "connect-smoke": "tsx scripts/connect-smoke.ts",
+    "p7-preflight": "tsx scripts/p7-preflight.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
