@@ -11,6 +11,7 @@ import { connectUrl } from '@/lib/current-user';
 import { type AppDb, getDb } from '@/lib/db/client';
 import { auditLog } from '@/lib/db/schema';
 import { verifyWorkosToken } from '@/lib/mcp-auth';
+import { checkRateLimit } from '@/lib/ratelimit';
 import {
   NeedsReloginError,
   NotConnectedError,
@@ -59,11 +60,25 @@ function userIdFrom(extra: Extra): string {
  * two "reconnect needed" cases to friendly results with a connect URL. Any
  * other error propagates as a tool error.
  */
+function rateLimited(kind: 'tool' | 'write', limit: number) {
+  return text({
+    error: 'rate_limited',
+    kind,
+    limit,
+    message:
+      kind === 'write'
+        ? 'Write rate limit exceeded for your account; try again shortly.'
+        : 'Rate limit exceeded for your account; slow down and try again shortly.',
+  });
+}
+
 async function withTenant(
   extra: Extra,
   fn: (scope: { ctx: PadiContext; db: AppDb; userId: string }) => Promise<unknown>,
 ) {
   const userId = userIdFrom(extra);
+  const toolLimit = await checkRateLimit(userId, 'tool');
+  if (!toolLimit.allowed) return rateLimited('tool', toolLimit.limit);
   const db = getDb();
   try {
     const ctx = await getTenantContext(db, userId);
@@ -191,6 +206,9 @@ const base = createMcpHandler(
       },
       async (args, extra) =>
         withTenant(extra as Extra, async ({ ctx, db, userId }) => {
+          const writeLimit = await checkRateLimit(userId, 'write');
+          if (!writeLimit.allowed)
+            return { error: 'rate_limited', kind: 'write', limit: writeLimit.limit };
           const input = DiveInput.parse(args);
           const id = await createDive(ctx, input);
           const dive = await getDive(ctx, id);
@@ -214,6 +232,9 @@ const base = createMcpHandler(
       },
       async (args, extra) =>
         withTenant(extra as Extra, async ({ ctx, db, userId }) => {
+          const writeLimit = await checkRateLimit(userId, 'write');
+          if (!writeLimit.allowed)
+            return { error: 'rate_limited', kind: 'write', limit: writeLimit.limit };
           const input = DiveUpdate.parse(args);
           await updateDive(ctx, input);
           const dive = await getDive(ctx, input.diveId);
@@ -239,6 +260,9 @@ const base = createMcpHandler(
       },
       async ({ diveId }, extra) =>
         withTenant(extra as Extra, async ({ ctx, db, userId }) => {
+          const writeLimit = await checkRateLimit(userId, 'write');
+          if (!writeLimit.allowed)
+            return { error: 'rate_limited', kind: 'write', limit: writeLimit.limit };
           const existing = await getDive(ctx, diveId);
           if (!existing) return { error: 'not_found', diveId };
           const strategy = await deleteDive(ctx, diveId);
