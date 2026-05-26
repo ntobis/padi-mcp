@@ -29,10 +29,15 @@ if (!base || !/^https?:\/\//.test(base)) {
 }
 
 let failures = 0;
+let skips = 0;
 const pass = (msg: string) => console.log(`  PASS  ${msg}`);
 const fail = (msg: string) => {
   failures++;
   console.log(`  FAIL  ${msg}`);
+};
+const skip = (msg: string) => {
+  skips++;
+  console.log(`  SKIP  ${msg}`);
 };
 const info = (msg: string) => console.log(`        ${msg}`);
 
@@ -112,6 +117,15 @@ async function step3(as: string): Promise<void> {
     fail(`could not fetch AS metadata (${url}): ${e instanceof Error ? e.message : e}`);
     return;
   }
+  // The AS lives on a different host than the deploy (e.g. *.authkit.app), so a
+  // sandbox allowlist may permit the deploy host but not this one. Treat that as
+  // a SKIP, not a FAIL — it's an environment limit, not a broken deploy.
+  const deny = res.headers.get('x-deny-reason');
+  if (deny) {
+    skip(`AS host not reachable from this environment (x-deny-reason: ${deny}): ${url}`);
+    info('Allowlist the AuthKit domain too, or run this pre-flight from an unrestricted machine.');
+    return;
+  }
   if (!res.ok) {
     fail(`AS metadata returned ${res.status} from ${url}`);
     return;
@@ -188,6 +202,13 @@ async function main(): Promise<void> {
   if (failures > 0) {
     console.log(`Pre-flight: ${failures} check(s) FAILED. Fix before the on-device test.`);
     process.exit(1);
+  }
+  if (skips > 0) {
+    console.log(
+      `Pre-flight: no failures, but ${skips} check(s) SKIPPED (host not reachable here). ` +
+        'Re-run from an unrestricted machine to cover them before the on-device test.',
+    );
+    return;
   }
   console.log(
     'Pre-flight: all checks passed. The deploy is ready for the on-device connector test.',
