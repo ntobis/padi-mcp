@@ -56,7 +56,7 @@ export async function getPadiIdToken(
   const cached = tokenCache.get(userId);
   if (!opts?.forceRefresh && cached && cached.expMs - now > 60_000) return cached.token;
 
-  const refreshToken = decryptSecret({
+  const refreshToken = await decryptSecret({
     ciphertext: conn.encRefreshToken,
     nonce: conn.encNonce,
     wrappedDek: conn.wrappedDek,
