@@ -42,6 +42,11 @@ export default function Home() {
             Connect your account →
           </a>
         </div>
+        <div className="home-foot">
+          <a href="/terms">Terms</a>
+          <span className="sep">·</span>
+          <a href="/privacy">Privacy</a>
+        </div>
       </div>
     </main>
   );
