@@ -7,6 +7,9 @@ in your own PADI account via Claude Desktop or any MCP client.
 PADI has no public API. This server talks to the same Hasura GraphQL
 endpoint the `learning.padi.com` web app uses, with your own auth token.
 
+> **Unofficial & independent.** Not affiliated with, endorsed by, or operated by
+> PADI. It accesses *your own* PADI account on your behalf. See `NOTICE`.
+
 ## Status
 
 Fully working against the live PADI logbook. All MCP tools are exercised by an
@@ -196,3 +199,15 @@ docs/
 inputs/                 (gitignored) session.json + HAR captures
 samples/                (gitignored) one GraphQL payload per captured op
 ```
+
+## License
+
+Copyright (C) 2026 Nicolas Tobis. Released under the **GNU Affero General Public
+License v3.0 or later** (AGPL-3.0-or-later) — see [`LICENSE`](LICENSE). In short:
+you can use, modify, and self-host it freely, but if you run a modified version
+as a network service you must release your source under the AGPL.
+
+A **commercial / proprietary license** (and acquisition of the IP) is available
+separately — see [`NOTICE`](NOTICE). Contact: nicolas.tobis@me.com.
+
+Contributions are welcome under the terms in [`CONTRIBUTING.md`](CONTRIBUTING.md).
