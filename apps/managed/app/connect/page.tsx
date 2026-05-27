@@ -236,6 +236,11 @@ export default function ConnectPage() {
 
           <div className="card-foot">
             Independent connector · not affiliated with or endorsed by PADI
+            <div className="foot-links">
+              <a href="/terms">Terms</a>
+              <span className="sep">·</span>
+              <a href="/privacy">Privacy</a>
+            </div>
           </div>
         </div>
       </main>
