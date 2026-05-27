@@ -33,7 +33,7 @@ function jwt(claims: Record<string, unknown>): string {
 }
 
 async function seedConnection(userId: string, refreshToken: string): Promise<void> {
-  const sealed = encryptSecret(refreshToken);
+  const sealed = await encryptSecret(refreshToken);
   await db.insert(schema.users).values({ workosUserId: userId }).onConflictDoNothing();
   await db.insert(schema.padiConnections).values({
     workosUserId: userId,

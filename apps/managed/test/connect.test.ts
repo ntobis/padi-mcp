@@ -56,7 +56,7 @@ describe('connectPadiAccount', () => {
     expect(conn?.status).toBe('active');
 
     // The encrypted token decrypts to the refresh token, never the password.
-    const recovered = decryptSecret({
+    const recovered = await decryptSecret({
       ciphertext: conn!.encRefreshToken,
       nonce: conn!.encNonce,
       wrappedDek: conn!.wrappedDek,

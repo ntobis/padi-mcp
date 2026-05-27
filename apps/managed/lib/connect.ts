@@ -24,7 +24,7 @@ export async function connectPadiAccount(
   const cognitoSub = String(claims.sub ?? '');
   if (!affiliateId) throw new Error('PADI ID token has no custom:affiliate_id claim.');
 
-  const sealed = encryptSecret(tokens.refreshToken);
+  const sealed = await encryptSecret(tokens.refreshToken);
   // password is now out of scope and never persisted.
 
   const connectionValues = {

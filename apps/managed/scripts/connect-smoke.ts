@@ -48,7 +48,7 @@ async function main(): Promise<void> {
   const db = drizzle(new PGlite(), { schema });
   await migrate(db, { migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)) });
 
-  const sealed = encryptSecret(refreshToken);
+  const sealed = await encryptSecret(refreshToken);
   await db.insert(schema.users).values({ workosUserId: 'dev-user' });
   await db.insert(schema.padiConnections).values({
     workosUserId: 'dev-user',
