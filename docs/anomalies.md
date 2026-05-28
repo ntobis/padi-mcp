@@ -1,85 +1,65 @@
-# Anomalies
+# Anomalies & wire-format quirks
 
-Append unexpected response shapes, errors that don't fit known patterns,
-or behaviors that contradict the brief. Include full GraphQL response bodies.
+Non-obvious behaviors of the PADI logbook API, with the workarounds applied in
+[`@padi-mcp/core`](../packages/core).
 
-Format: `## [timestamp] short title` followed by details.
+## `dive_date` is read as a naive datetime, not a date
 
-## [2026-05-24T09:07Z] `dive_date` always read as naive datetime, brief said date
+Reads return `dive_date` as `YYYY-MM-DDT00:00:00` (a naive datetime, always at
+midnight), even though writes take `MM/DD/YYYY`. The read path normalizes it back
+to `YYYY-MM-DD` (`naiveDatetimeToIsoDate()` in `transforms/dates.ts`).
 
-Brief: reads return `YYYY-MM-DD`. Reality: every read returns
-`YYYY-MM-DDTHH:MM:SS` (always with `T00:00:00`). Confirmed against
-20717446 (`2026-05-24T00:00:00`), 20716851, and every sandbox dive we
-created. Fixed in `src/operations/{get,list}-dive*.ts` by routing reads
-through `naiveDatetimeToIsoDate()` (`src/transforms/dates.ts`).
+## Hard delete always fails with a foreign-key violation
 
-## [2026-05-24T09:08Z] Hard delete always fails with FK violation
+`delete_logbook_logs` fails 100% of the time with a foreign-key violation
+(`conditions_logs_id_fkey`) — the child tables have no `ON DELETE CASCADE`. The
+working strategy is a per-table delete in order: `logbook_depth_time` →
+`logbook_conditions` → `logbook_equipment` → `logbook_experience` →
+`logbook_skills` → `logbook_logs`.
 
-`delete_logbook_logs` fails 100% of the time with
-`constraint-violation: Foreign key violation … conditions_logs_id_fkey
-on table "conditions"`. PADI's schema does not have ON DELETE CASCADE on
-the child tables. Confirmed across 5 separate dives created during
-lifecycle + enum-probe runs.
+The delete operation still attempts the hard delete first (then caches the
+result to skip the wasted attempt) so that if PADI ever adds the cascade FK, it
+starts working automatically.
 
-The working strategy is per-table delete in this order:
-`logbook_depth_time` → `logbook_conditions` → `logbook_equipment` →
-`logbook_experience` → `logbook_skills` → `logbook_logs`.
+## `additional_equipment` is asymmetric (read JSON array, write pg literal)
 
-We keep `hardDelete` first in the strategy order because (a) caching
-skips the wasted attempt after the first call and (b) PADI could add the
-cascade FK at any time, in which case we'd silently start using it.
+The column is a Postgres `text[]` (Hasura scalar `_text`) with different read and
+write shapes:
 
-## [2026-05-24T09:10Z] `additional_equipment` is asymmetric (read JSON array, write pg literal)
+- **Reads** return a JSON array: `["Camera","Light"]`.
+- **Writes** require a Postgres array-literal **string**:
+  - a real GraphQL list `["Camera"]` → `A string is expected for type: _text`
+  - a bare string `"Camera"` → `malformed array literal: "Camera"`
+  - a pg-literal string `'{"Camera","Light"}'` → accepted, reads back as the array
+  - empty array: send `'{}'`, reads back as `[]`
 
-The brief described `additional_equipment` as a string. Empirical:
-- Column is Postgres `text[]` (Hasura scalar `_text`).
-- Reads return a JSON array: `["Camera","Light"]`.
-- Writes require a Postgres array-literal **string**:
-  - Real GraphQL list (`["Camera"]`) → error
-    `parse-failed: A string is expected for type: _text`.
-  - Bare string (`"Camera"`) → error
-    `malformed array literal: "Camera"`.
-  - Pg literal string (`'{"Camera","Light"}'`) → ✅ accepted, reads back
-    as `["Camera","Light"]`.
-- Empty array: send `'{}'`, reads as `[]`.
+Handled in `transforms/arrays.ts` (`coerceAdditionalEquipmentWrite` for writes,
+`fromAdditionalEquipment` for reads). The canonical TypeScript type is
+`string[] | null` both directions.
 
-Handled by `src/transforms/arrays.ts`
-(`coerceAdditionalEquipmentWrite` for writes,
-`fromAdditionalEquipment` for reads). Canonical TS type is
-`string[] | null` in both directions.
+## `status` enum is narrow — `Trash` is rejected
 
-## [2026-05-24T09:10Z] `status` enum is narrow — `Trash` is rejected
+Setting `status: 'Trash'` does **not** soft-delete; it's rejected
+(`invalid input value for enum status: "Trash"`). The accepted values are
+`Publish`, `Draft`, `Pending`, so a soft delete uses `Draft`.
 
-The brief assumed `status: 'Trash'` would soft-delete. It doesn't —
-`Trash` is rejected with `data-exception: invalid input value for enum
-status: "Trash"`. The only accepted values are `Publish`, `Draft`,
-`Pending`. `softDelete()` now defaults to `Draft`.
+## Enum names use underscores, not camelCase
 
-## [2026-05-24T09:10Z] `dive_type`, `suit_type`, `gas_mixture` enum names use underscores
+Several enums use underscores between letters and numbers, and combined words
+where you might guess otherwise:
 
-Initial guesses (FullSuit3mm, Nitrox32, Shore) all failed. A fresh HAR
-capture (`inputs/moreoptions{1,2}.har`) targeting the web UI dropdowns
-revealed the real naming convention uses underscores between letters
-and numbers, plus the words "Beach" + "Shore" combined:
-
-- `dive_type`: `BeachShore` (third value, alongside `Boat` and `Other`)
+- `dive_type`: `BeachShore` (alongside `Boat`, `Other`)
 - `suit_type`: `NoExposure`, `Shorty`, `FullSuit_3mm`, `FullSuit_5mm`,
   `FullSuit_7mm`, `SemiDrySuit`, `DrySuit`
-- `gas_mixture`: adds `Enriched_32`, `Enriched_36`, `Enriched_40`
-  on top of the previously-known `Air`, `Enriched`, `Trimix`, `Heliox`,
-  `Rebreather`, `Nitrox`
+- `gas_mixture`: `Enriched_32` / `_36` / `_40` plus `Air`, `Enriched`, `Nitrox`,
+  `Trimix`, `Heliox`, `Rebreather`
 
-All round-tripped against live API.
+See [`enums.md`](enums.md) for the full table.
 
-## [2026-05-24T09:32Z] gas_mixture and oxygen are NOT validated for consistency
+## `gas_mixture` and `oxygen` are not cross-validated
 
-The web UI gates Enriched_32 with oxygen=32, Enriched_36 with oxygen=36
-etc. — the user thought this was an API requirement. It is not. Sent
-`gas_mixture: Enriched_36, oxygen: 21` directly to the API and it
-accepted without complaint, read back as written. Same for
-`Enriched_32` left with `oxygen` unchanged from a prior `Air` (21).
-
-Implication: when a user dictates "I dove on Nitrox 32" the tool must
-set BOTH `gas_mixture: Enriched_32` AND `oxygen: 32` / `nitrogen: 68`
-itself — the backend won't fail loudly if they drift apart, just
-silently store the inconsistent state.
+The web UI keeps `gas_mixture` and the `oxygen`/`nitrogen` percentages in sync,
+but the API does **not** enforce it — `gas_mixture: Enriched_36` with `oxygen: 21`
+is accepted and stored as-is. So a caller setting "nitrox 32" must set both
+`gas_mixture: Enriched_32` **and** `oxygen: 32` / `nitrogen: 68`; the backend
+won't flag a mismatch.
