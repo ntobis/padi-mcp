@@ -12,6 +12,7 @@ import { connectUrl } from '@/lib/current-user';
 import { type AppDb, getDb } from '@/lib/db/client';
 import { auditLog } from '@/lib/db/schema';
 import { verifyWorkosToken } from '@/lib/mcp-auth';
+import { checkServiceGate } from '@/lib/kill-switch';
 import { checkRateLimit } from '@/lib/ratelimit';
 import {
   NeedsReloginError,
@@ -91,6 +92,8 @@ async function withTenant(
   fn: (scope: { ctx: PadiContext; db: AppDb; userId: string }) => Promise<unknown>,
 ) {
   const userId = userIdFrom(extra);
+  const gate = checkServiceGate(userId);
+  if (gate.blocked) return text({ error: gate.error, message: gate.message });
   const toolLimit = await checkRateLimit(userId, 'tool');
   if (!toolLimit.allowed) return rateLimited('tool', toolLimit.limit);
   const db = getDb();
@@ -126,6 +129,8 @@ async function withAccount(
   fn: (scope: { db: AppDb; userId: string }) => Promise<unknown>,
 ) {
   const userId = userIdFrom(extra);
+  const gate = checkServiceGate(userId, { allowAccountTools: true });
+  if (gate.blocked) return text({ error: gate.error, message: gate.message });
   const toolLimit = await checkRateLimit(userId, 'tool');
   if (!toolLimit.allowed) return rateLimited('tool', toolLimit.limit);
   return text(await fn({ db: getDb(), userId }));
