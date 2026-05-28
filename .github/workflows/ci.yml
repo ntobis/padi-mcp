@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build core
+        run: npm run build:core
+      - name: Typecheck (root)
+        run: npm run typecheck
+      - name: Test (root)
+        run: npm test
+      - name: Typecheck (managed)
+        run: npm run typecheck -w @padi-mcp/managed
+      - name: Test (managed)
+        run: npm run test -w @padi-mcp/managed
