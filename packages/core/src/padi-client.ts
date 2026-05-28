@@ -133,9 +133,7 @@ async function graphqlOnce<T, V>(
       `graphql ${req.operationName} blocked-by-proxy ${duration}ms reason=${denyReason}`,
     );
     throw new NetworkPolicyError(
-      `Request to ${ctx.endpoint} was blocked by the network policy ` +
-        `(x-deny-reason: ${denyReason}). Run from a host that can reach PADI, or add ` +
-        'logbook.global-prod.padi.com to the environment allowlist.',
+      `Request to ${ctx.endpoint} was blocked by the network policy (x-deny-reason: ${denyReason}). Run from a host that can reach PADI, or add logbook.global-prod.padi.com to the environment allowlist.`,
       denyReason,
     );
   }

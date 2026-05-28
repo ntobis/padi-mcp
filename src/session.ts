@@ -59,7 +59,7 @@ const EXPIRY_SKEW_MS = 60_000; // refresh when <60s of life remains
 
 /**
  * Resolve inputs/session.json relative to this module, NOT process.cwd().
- * (Claude Desktop launches the server with cwd=/, so a cwd-relative path fails.)
+ * (Some MCP host apps launch the server with cwd=/, so a cwd-relative path fails.)
  * `PADI_SESSION_PATH` overrides for users who keep the file elsewhere.
  */
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
@@ -108,9 +108,7 @@ export async function loadSession(path: string = SESSION_PATH): Promise<Session>
     raw = await readFile(path, 'utf8');
   } catch {
     throw new SessionMissingError(
-      `session.json not found at ${path}. Either call the padi_login tool with your PADI ` +
-        'email + password, run `npm run login`, or set PADI_SESSION_PATH to point at an ' +
-        'existing session file.',
+      `session.json not found at ${path}. Either call the padi_login tool with your PADI email + password, run \`npm run login\`, or set PADI_SESSION_PATH to point at an existing session file.`,
     );
   }
   const parsed = normalizeSession(JSON.parse(raw) as Partial<Session>);
@@ -338,8 +336,7 @@ function warnAboutToken(session: Session): void {
     console.error('session: warning — could not decode ID token expiry.');
   } else if (secs <= 0) {
     console.error(
-      `session: WARNING — ID token expired ${-secs}s ago and there is no refresh token. ` +
-        'Run padi_login.',
+      `session: WARNING — ID token expired ${-secs}s ago and there is no refresh token. Run padi_login.`,
     );
   } else {
     console.error(

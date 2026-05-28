@@ -4,7 +4,7 @@
  * Layer-1 (WorkOS AuthKit) contract before the real on-device connector test.
  *
  * No secrets, no OAuth handshake — this only exercises the PUBLIC discovery
- * surface that Claude relies on to (a) learn it must authenticate, (b) find the
+ * surface MCP clients rely on to (a) learn it must authenticate, (b) find the
  * authorization server, and (c) dynamically register itself. Catching a broken
  * deploy here saves you from debugging on a phone.
  *
@@ -144,7 +144,9 @@ async function step3(as: string): Promise<void> {
   if (meta.registration_endpoint) {
     pass('registration_endpoint present (Dynamic Client Registration enabled)');
   } else {
-    fail('registration_endpoint MISSING — Claude cannot self-register (enable DCR in AuthKit)');
+    fail(
+      'registration_endpoint MISSING — MCP clients cannot self-register (enable DCR in AuthKit)',
+    );
   }
 }
 
@@ -168,10 +170,10 @@ async function step4(): Promise<void> {
 }
 
 /**
- * Detect a sandbox/proxy denial (e.g. Claude Code's network allowlist returns
- * 403 + `x-deny-reason: host_not_allowed`). Such a block makes every check a
- * false negative, so we bail with clear guidance instead of reporting bogus
- * "auth not enforced" failures.
+ * Detect a sandbox/proxy denial (e.g. a sandboxed runner's network allowlist
+ * returns 403 + `x-deny-reason: host_not_allowed`). Such a block makes every
+ * check a false negative, so we bail with clear guidance instead of reporting
+ * bogus "auth not enforced" failures.
  */
 async function ensureReachable(): Promise<void> {
   let res: Response;
@@ -205,8 +207,7 @@ async function main(): Promise<void> {
   }
   if (skips > 0) {
     console.log(
-      `Pre-flight: no failures, but ${skips} check(s) SKIPPED (host not reachable here). ` +
-        'Re-run from an unrestricted machine to cover them before the on-device test.',
+      `Pre-flight: no failures, but ${skips} check(s) SKIPPED (host not reachable here). Re-run from an unrestricted machine to cover them before the on-device test.`,
     );
     return;
   }

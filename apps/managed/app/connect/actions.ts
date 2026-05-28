@@ -1,16 +1,19 @@
 'use server';
 
-import { CognitoAuthError } from '@padi-mcp/core';
-import { withAuth } from '@workos-inc/authkit-nextjs';
 import { connectPadiAccount } from '@/lib/connect';
 import { getDb } from '@/lib/db/client';
+import { CognitoAuthError } from '@padi-mcp/core';
+import { withAuth } from '@workos-inc/authkit-nextjs';
 
 export interface ConnectState {
   ok: boolean;
   message: string;
 }
 
-export async function connectAction(_prev: ConnectState | null, formData: FormData): Promise<ConnectState> {
+export async function connectAction(
+  _prev: ConnectState | null,
+  formData: FormData,
+): Promise<ConnectState> {
   const { user } = await withAuth();
   if (!user) {
     return { ok: false, message: 'Please sign in first, then try again.' };
@@ -33,4 +36,3 @@ export async function connectAction(_prev: ConnectState | null, formData: FormDa
     return { ok: false, message: `Error: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
-

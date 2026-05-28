@@ -116,8 +116,7 @@ export async function deleteDive(ctx: PadiContext, diveId: number): Promise<Dele
     }
   }
   throw new Error(
-    `All delete strategies failed for dive ${diveId}` +
-      (lastError instanceof Error ? `: ${lastError.message}` : ''),
+    `All delete strategies failed for dive ${diveId}${lastError instanceof Error ? `: ${lastError.message}` : ''}`,
   );
 }
 

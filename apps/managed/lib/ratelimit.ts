@@ -166,7 +166,14 @@ export async function checkRateLimit(
       `[ratelimit] over-limit user=${userId} kind=${kind} limit=${cfg.max}/${cfg.windowSeconds}s enforced=${enforced}`,
     );
     notifyAbuse(
-      { type: 'rate_limit', userId, kind, limit: cfg.max, windowSeconds: cfg.windowSeconds, enforced },
+      {
+        type: 'rate_limit',
+        userId,
+        kind,
+        limit: cfg.max,
+        windowSeconds: cfg.windowSeconds,
+        enforced,
+      },
       env,
     );
   }
