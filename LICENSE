@@ -1,0 +1,32 @@
+PADI MCP — an MCP server for the PADI dive logbook
+Copyright (C) 2026 Nicolas Tobis
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+A commercial / proprietary license is also available — see NOTICE.
+
+================================================================================
+ACTION REQUIRED — drop in the full canonical license text
+================================================================================
+The block above is the standard AGPL-3.0 short notice, but the COMPLETE license
+text (~660 lines) must accompany it for the license to be valid and for GitHub
+to detect it. The environment that scaffolded this file has no internet access
+to fetch it. From the repo root on a machine with internet, run ONE of:
+
+    curl -L https://www.gnu.org/licenses/agpl-3.0.txt -o LICENSE
+    # or: wget -O LICENSE https://www.gnu.org/licenses/agpl-3.0.txt
+
+The copyright line and the commercial-license offer live in NOTICE, so they are
+not lost when this file is replaced with the canonical text.
