@@ -16,6 +16,8 @@
  * calls — the "public phase" flip, no code change required.
  */
 
+import { notifyAbuse } from './alerts';
+
 export type LimitKind = 'tool' | 'write';
 
 export interface LimitConfig {
@@ -162,6 +164,10 @@ export async function checkRateLimit(
   if (overLimit) {
     console.error(
       `[ratelimit] over-limit user=${userId} kind=${kind} limit=${cfg.max}/${cfg.windowSeconds}s enforced=${enforced}`,
+    );
+    notifyAbuse(
+      { type: 'rate_limit', userId, kind, limit: cfg.max, windowSeconds: cfg.windowSeconds, enforced },
+      env,
     );
   }
 
