@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 /**
  * Protocol smoke test for the managed MCP endpoint. Connects a real Streamable
- * HTTP MCP client (the same transport Claude uses), lists tools, and calls
- * ping + padi_count_dives. Requires the dev server running:
+ * HTTP MCP client (the same transport real MCP clients use), lists tools, and
+ * calls ping + padi_count_dives. Requires the dev server running:
  *
  *   npm run dev -w @padi-mcp/managed      # in one terminal
  *   npm run mcp-http-smoke -w @padi-mcp/managed

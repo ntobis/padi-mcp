@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 /**
  * Rotate the envelope KEK (PADI_MASTER_KEY) across all stored connections.
  *
@@ -18,7 +19,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { EnvKeyProvider, parseKek, rewrapSecret } from '../lib/crypto/envelope';
-import { eq } from 'drizzle-orm';
 import { padiConnections } from '../lib/db/schema';
 
 async function main() {
@@ -26,8 +26,12 @@ async function main() {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) throw new Error('DATABASE_URL is not set.');
 
-  const oldProvider = new EnvKeyProvider(parseKek(process.env.PADI_MASTER_KEY_OLD, 'PADI_MASTER_KEY_OLD'));
-  const newProvider = new EnvKeyProvider(parseKek(process.env.PADI_MASTER_KEY_NEW, 'PADI_MASTER_KEY_NEW'));
+  const oldProvider = new EnvKeyProvider(
+    parseKek(process.env.PADI_MASTER_KEY_OLD, 'PADI_MASTER_KEY_OLD'),
+  );
+  const newProvider = new EnvKeyProvider(
+    parseKek(process.env.PADI_MASTER_KEY_NEW, 'PADI_MASTER_KEY_NEW'),
+  );
 
   const client = postgres(dbUrl, { prepare: false });
   const db = drizzle(client);
@@ -72,7 +76,9 @@ async function main() {
     await client.end();
   }
 
-  console.error(`[rotate] done: ${rotated} re-wrapped, ${failed} failed${dryRun ? ' (dry run — nothing written)' : ''}.`);
+  console.error(
+    `[rotate] done: ${rotated} re-wrapped, ${failed} failed${dryRun ? ' (dry run — nothing written)' : ''}.`,
+  );
   if (failed > 0) process.exitCode = 1;
 }
 

@@ -35,8 +35,7 @@ export interface KeyProvider {
 export function parseKek(b64: string | undefined, label = 'PADI_MASTER_KEY'): Buffer {
   if (!b64) {
     throw new EnvelopeKeyError(
-      `${label} is not set. Generate one with: ` +
-        'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"',
+      `${label} is not set. Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"`,
     );
   }
   const key = Buffer.from(b64, 'base64');

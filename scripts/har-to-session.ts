@@ -103,7 +103,7 @@ async function main(): Promise<void> {
     .sort((a, b) => b.startedDateTime.localeCompare(a.startedDateTime));
   const latest = successful[0] ?? logbookEntries[logbookEntries.length - 1]!;
   const headers = headerMap(latest.request.headers);
-  const authorization = headers['authorization'] ?? '';
+  const authorization = headers.authorization ?? '';
   const session = {
     endpoint: latest.request.url,
     authorization,

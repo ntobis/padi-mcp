@@ -155,8 +155,7 @@ export async function loginWithPassword(
   if (json.ChallengeName) {
     throw new CognitoAuthError(
       'Challenge',
-      `Unexpected auth challenge "${json.ChallengeName}". PADI is not expected to require this ` +
-        '(e.g. MFA). Cannot proceed automatically.',
+      `Unexpected auth challenge "${json.ChallengeName}". PADI is not expected to require this (e.g. MFA). Cannot proceed automatically.`,
     );
   }
   return toTokens(json);

@@ -1,0 +1,16 @@
+# Default reviewer for every PR. Update when collaborators join.
+*                                @ntobis
+
+# Security-sensitive areas: token handling, crypto, auth, schema.
+/packages/core/src/auth/         @ntobis
+/apps/managed/lib/crypto/        @ntobis
+/apps/managed/lib/mcp-auth.ts    @ntobis
+/apps/managed/lib/tokens.ts      @ntobis
+/apps/managed/drizzle/           @ntobis
+
+# Community-health and license surface — keep tight.
+/LICENSE                         @ntobis
+/NOTICE                          @ntobis
+/CONTRIBUTING.md                 @ntobis
+/SECURITY.md                     @ntobis
+/.github/                        @ntobis

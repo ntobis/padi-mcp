@@ -1,7 +1,7 @@
 /**
  * Managed MCP endpoint (Streamable HTTP) via Vercel's mcp-handler, protected by
- * WorkOS AuthKit OAuth (withMcpAuth). Claude does the OAuth handshake against
- * AuthKit (discovered via Protected Resource Metadata at
+ * WorkOS AuthKit OAuth (withMcpAuth). The MCP client does the OAuth handshake
+ * against AuthKit (discovered via Protected Resource Metadata at
  * /.well-known/oauth-protected-resource), then sends a bearer token we verify
  * per request. The verified user id is the tenant key — never taken from tool
  * arguments. Each tool loads that tenant's PADI connection, mints an ID token,
@@ -11,8 +11,8 @@ import { deleteTenantData, disconnectPadiAccount, exportTenantData } from '@/lib
 import { connectUrl } from '@/lib/current-user';
 import { type AppDb, getDb } from '@/lib/db/client';
 import { auditLog } from '@/lib/db/schema';
-import { verifyWorkosToken } from '@/lib/mcp-auth';
 import { checkServiceGate } from '@/lib/kill-switch';
+import { verifyWorkosToken } from '@/lib/mcp-auth';
 import { checkRateLimit } from '@/lib/ratelimit';
 import {
   NeedsReloginError,

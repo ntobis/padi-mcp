@@ -54,16 +54,16 @@ export default function PrivacyPage() {
         <h2>How we use it</h2>
         <p>
           Your data is used solely to operate the Service: to authenticate you, mint short-lived
-          access tokens, and perform the PADI actions you request. We do not sell your data or use it
-          for advertising.
+          access tokens, and perform the PADI actions you request. We do not sell your data or use
+          it for advertising.
         </p>
 
         <h2>Who it is shared with</h2>
         <p>
-          To run the Service your data is processed by PADI (to operate your logbook on your request)
-          and our infrastructure providers — sign-in (WorkOS), hosting (Vercel), database (Neon), and
-          optionally rate-limit storage (Upstash). We share only what is necessary to provide the
-          Service.
+          To run the Service your data is processed by PADI (to operate your logbook on your
+          request) and our infrastructure providers — sign-in (WorkOS), hosting (Vercel), database
+          (Neon), and optionally rate-limit storage (Upstash). We share only what is necessary to
+          provide the Service.
         </p>
 
         <h2>Security</h2>
