@@ -4,6 +4,7 @@ dist/
 inputs/
 samples/
 docs/sample-real-dive.json
+docs/har-summary.md
 *.har
 *.log
 .DS_Store
