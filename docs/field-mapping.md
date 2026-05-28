@@ -1,7 +1,8 @@
 # Field mapping — PADI logbook UI ↔ GraphQL
 
-To be populated during Phase 2 (read) and Phase 3 (write). For each UI
-label, record the GraphQL field, table, and any transform applied.
+How the dive-form fields seen in the PADI web UI map to GraphQL fields, their
+table, and any transform applied. A representative subset; for the full set of
+fields and operations see [`discovered-schema.md`](discovered-schema.md).
 
 | UI label | Table | Field | Transform |
 |---|---|---|---|
@@ -11,5 +12,5 @@ label, record the GraphQL field, table, and any transform applied.
 | Dive type | logbook_logs | dive_type | enum |
 | Max depth | logbook_depth_time | max_depth | string ↔ number |
 | Bottom time | logbook_depth_time | bottom_time | string ↔ number |
-| Time in | logbook_depth_time | time_in | TBD |
-| Time out | logbook_depth_time | time_out | TBD |
+| Time in | logbook_depth_time | time_in | time string |
+| Time out | logbook_depth_time | time_out | time string |
