@@ -1,6 +1,6 @@
 /**
- * Verifies a WorkOS AuthKit access token (the bearer Claude sends after the
- * OAuth handshake) for the MCP endpoint.
+ * Verifies a WorkOS AuthKit access token (the bearer an MCP client sends
+ * after the OAuth handshake) for the MCP endpoint.
  *
  * The MCP/DCR flow is served by your AuthKit domain (https://<slug>.authkit.app),
  * NOT api.workos.com. We discover that authorization server's metadata
@@ -36,7 +36,8 @@ async function ensureLoaded(): Promise<void> {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Auth server metadata fetch failed (${res.status}) from ${url}`);
       const meta = (await res.json()) as AuthServerMetadata;
-      if (!meta.jwks_uri || !meta.issuer) throw new Error('Auth server metadata missing jwks_uri/issuer');
+      if (!meta.jwks_uri || !meta.issuer)
+        throw new Error('Auth server metadata missing jwks_uri/issuer');
       jwks = createRemoteJWKSet(new URL(meta.jwks_uri));
       metadata = meta;
     })().catch((e) => {
@@ -62,8 +63,7 @@ export async function verifyWorkosToken(
     return undefined; // invalid signature/issuer, expired, or metadata unavailable
   }
   if (typeof payload.sub !== 'string' || !payload.sub) return undefined;
-  const scopes =
-    typeof payload.scope === 'string' ? payload.scope.split(' ').filter(Boolean) : [];
+  const scopes = typeof payload.scope === 'string' ? payload.scope.split(' ').filter(Boolean) : [];
   return {
     token: bearerToken,
     clientId: typeof payload.client_id === 'string' ? payload.client_id : '',

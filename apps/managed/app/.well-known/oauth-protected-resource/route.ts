@@ -1,7 +1,7 @@
 /**
  * OAuth 2.0 Protected Resource Metadata (RFC 9728). Tells MCP clients which
  * authorization server (our WorkOS AuthKit) can issue tokens for this resource,
- * so Claude can discover where to log in. The auth server URL is the AuthKit
+ * so clients can discover where to log in. The auth server URL is the AuthKit
  * domain (WORKOS_AUTHKIT_DOMAIN, e.g. https://<slug>.authkit.app).
  */
 import { metadataCorsOptionsRequestHandler, protectedResourceHandler } from 'mcp-handler';

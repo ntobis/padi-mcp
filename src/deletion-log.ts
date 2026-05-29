@@ -1,6 +1,6 @@
 /**
  * Local audit trail for deletions, appended to docs/deletions.log. Best-effort:
- * a write failure (e.g. running outside the repo, as under Claude Desktop) must
+ * a write failure (e.g. when the server is launched from a foreign cwd) must
  * never turn a successful delete into a reported failure. The managed service
  * uses a database audit table instead.
  */

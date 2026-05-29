@@ -23,14 +23,14 @@ describe('connectUrl', () => {
   });
 
   it('falls back to the Vercel production domain (never localhost in prod)', () => {
-    delete process.env.APP_URL;
+    Reflect.deleteProperty(process.env, 'APP_URL');
     process.env.VERCEL_PROJECT_PRODUCTION_URL = 'padi-mcp-managed.vercel.app';
     expect(connectUrl()).toBe('https://padi-mcp-managed.vercel.app/connect');
   });
 
   it('falls back to localhost only when nothing is configured', () => {
-    delete process.env.APP_URL;
-    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    Reflect.deleteProperty(process.env, 'APP_URL');
+    Reflect.deleteProperty(process.env, 'VERCEL_PROJECT_PRODUCTION_URL');
     expect(connectUrl()).toBe('http://localhost:3000/connect');
   });
 });

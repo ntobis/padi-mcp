@@ -15,9 +15,9 @@ const BUBBLES = [
 function Bubbles() {
   return (
     <div className="bubbles" aria-hidden="true">
-      {BUBBLES.map((b, i) => (
+      {BUBBLES.map((b) => (
         <i
-          key={i}
+          key={b.x}
           style={
             {
               '--x': b.x,

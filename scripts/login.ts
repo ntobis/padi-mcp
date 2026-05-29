@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Terminal login for the open-source local server — lets a user authenticate
- * without going through Claude Desktop.
+ * without going through an MCP host app.
  *
  * Usage:
  *   npm run login                 # prompts for email + password

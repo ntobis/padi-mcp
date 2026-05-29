@@ -77,7 +77,7 @@ function parseCurl(input: string): ParsedCurl {
     }
     if (t === '-b' || t === '--cookie') {
       const v = tokens[++i];
-      if (v) headers['cookie'] = v;
+      if (v) headers.cookie = v;
       continue;
     }
     if (t === '--data' || t === '--data-raw' || t === '--data-binary' || t === '-d') {
@@ -111,7 +111,7 @@ function decodeJwtSub(authHeader: string): string {
 export function buildSessionFromCurl(input: string): Session {
   const { url, headers } = parseCurl(input);
   const endpoint = url && /\/api\/Logbook/i.test(url) ? url : ENDPOINT;
-  const authorization = headers['authorization'] ?? '';
+  const authorization = headers.authorization ?? '';
   if (!authorization) throw new Error('curl is missing Authorization header');
   const affiliate_id = headers['affiliate-id'] ?? '';
   if (!affiliate_id) throw new Error('curl is missing affiliate-id header');

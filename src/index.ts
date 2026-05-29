@@ -257,11 +257,7 @@ async function main(): Promise<void> {
   server.registerTool(
     'padi_delete_dive',
     {
-      description:
-        'Delete a dive. Tries hard-delete → per-table → soft-delete in order until one ' +
-        'succeeds. Refuses to delete a dive whose title does NOT start with MCPTEST_ AND ' +
-        `whose date is on or after ${SANDBOX_DATE_CUTOFF}, unless iAmSureThisIsNotARealDive ` +
-        'is true. SIDE EFFECT: irreversibly removes the dive from the PADI logbook.',
+      description: `Delete a dive. Tries hard-delete → per-table → soft-delete in order until one succeeds. Refuses to delete a dive whose title does NOT start with MCPTEST_ AND whose date is on or after ${SANDBOX_DATE_CUTOFF}, unless iAmSureThisIsNotARealDive is true. SIDE EFFECT: irreversibly removes the dive from the PADI logbook.`,
       inputSchema: {
         diveId: z.number().int().positive(),
         confirm: z.literal(true),

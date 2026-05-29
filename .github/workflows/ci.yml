@@ -17,6 +17,8 @@ jobs:
       - run: npm ci
       - name: Build core
         run: npm run build:core
+      - name: Lint
+        run: npm run lint
       - name: Typecheck (root)
         run: npm run typecheck
       - name: Test (root)
