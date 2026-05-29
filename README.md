@@ -1,10 +1,10 @@
 # PADI MCP
 
 **Talk to your PADI dive logbook in plain language.** This is an
-[MCP](https://modelcontextprotocol.io) server — a small program an AI assistant like
-Claude can call — that lets you read and manage the dives in *your own* PADI account just
-by asking: *"how many dives do I have?"*, *"log today's dive at Blue Hole, 28 m, 42 min"*,
-*"show my last 10 dives."*
+[MCP](https://modelcontextprotocol.io) server. It works with **Claude, ChatGPT, Cursor,
+and other MCP-compatible AI assistants** — read and manage the dives in *your own* PADI
+account just by asking: *"how many dives do I have?"*, *"log today's dive at Blue Hole,
+28 m, 42 min"*, *"show my last 10 dives."*
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![CI](https://github.com/ntobis/padi-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ntobis/padi-mcp/actions/workflows/ci.yml)
@@ -23,6 +23,7 @@ by asking: *"how many dives do I have?"*, *"log today's dive at Blue Hole, 28 m,
 
 - [What you can do](#what-you-can-do)
 - [Quickstart](#quickstart)
+- [Using with other MCP clients](#using-with-other-mcp-clients)
 - [Connecting your PADI account](#connecting-your-padi-account)
 - [Tools reference](#tools-reference)
 - [Configuration](#configuration)
@@ -52,7 +53,9 @@ Set it up once and it keeps itself signed in — no copying tokens every hour.
 ## Quickstart
 
 **You'll need:** [Node.js](https://nodejs.org) 20 or newer, a PADI account, and an MCP
-client (this guide uses [Claude Desktop](https://claude.ai/download)).
+client. The walkthrough below uses [Claude Desktop](https://claude.ai/download); see
+[Using with other MCP clients](#using-with-other-mcp-clients) for **Cursor, ChatGPT, VS
+Code, and more**.
 
 **1. Install and build**
 
@@ -90,8 +93,52 @@ Open your `claude_desktop_config.json` and add a `padi` entry:
 **4. Restart Claude Desktop** (fully quit and reopen). The PADI tools now appear in the
 tools menu — try *"how many dives do I have?"*
 
-> **Using a different MCP client?** Point it at the same command — run
-> `node /absolute/path/to/padi-mcp/dist/index.js` over stdio.
+> **Using a different MCP client?** See
+> [Using with other MCP clients](#using-with-other-mcp-clients) for Cursor, VS Code,
+> ChatGPT, and the generic stdio pattern.
+
+---
+
+## Using with other MCP clients
+
+The server is a stdio MCP program — it works with any client that can spawn a local MCP
+server. The command itself is always the same:
+
+- **command:** `node`
+- **args:** `["/absolute/path/to/padi-mcp/dist/index.js"]`
+
+Only the config file location and JSON shape change per client.
+
+### Cursor
+
+Add this to `~/.cursor/mcp.json` (create the file if it doesn't exist):
+
+```json
+{
+  "mcpServers": {
+    "padi": {
+      "command": "node",
+      "args": ["/absolute/path/to/padi-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+Then restart Cursor — the tools appear under MCP in the chat sidebar.
+
+### VS Code, Cline, Continue, Zed, Goose, Windsurf
+
+All accept the same `command` + `args` invocation. See each client's MCP-server
+documentation for where its config file lives and the exact key names — they vary
+slightly, but the server entry itself is identical to the Cursor block above.
+
+### ChatGPT
+
+ChatGPT supports **remote** MCP (Streamable HTTP) via Connectors, **not** local stdio.
+The local server in this repo runs over stdio, so ChatGPT can't talk to it directly. To
+use this project with ChatGPT, self-host the [managed service](apps/managed/) — it
+exposes the same dive tools over Streamable HTTP and adds multi-user sign-in. Same
+operations, different transport.
 
 ---
 
@@ -247,10 +294,12 @@ Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 ## Hosted version
 
 This repo also contains an optional **multi-user hosted service** in
-[`apps/managed/`](apps/managed) (a web app with sign-in and a browser "connect" page,
-reachable as a remote MCP connector). Most people don't need it — the
-[quickstart](#quickstart) above runs everything locally. The hosted service has its own
-setup and is heavier to operate; see that directory if you're curious.
+[`apps/managed/`](apps/managed) — a Next.js app with sign-in and a browser "connect"
+page, reachable as a remote MCP connector. Most people don't need it; the
+[quickstart](#quickstart) above runs everything locally. The remote variant is also what
+you'd self-host if you want to use this with **ChatGPT** (whose Connectors require a
+remote MCP URL rather than a local stdio command). See
+[`apps/managed/README.md`](apps/managed/README.md) for setup.
 
 ---
 

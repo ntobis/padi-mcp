@@ -19,7 +19,7 @@ What you expected to happen instead.
 **Environment**
 - OS:
 - Node version (`node -v`):
-- MCP client + version (e.g. Claude Desktop):
+- MCP client + version (e.g. Claude Desktop, Cursor, ChatGPT, VS Code):
 - padi-mcp version / commit:
 - Auth mode: login (auto-refresh) / cURL session / managed service
 
