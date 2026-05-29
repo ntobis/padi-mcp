@@ -11,8 +11,8 @@
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { countDives } from '@padi-mcp/core';
 import { PGlite } from '@electric-sql/pglite';
+import { countDives } from '@padi-mcp/core';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { encryptSecret } from '../lib/crypto/envelope';
@@ -59,7 +59,9 @@ async function main(): Promise<void> {
     encNonce: sealed.nonce,
     wrappedDek: sealed.wrappedDek,
   });
-  console.error('seeded an encrypted connection in PGlite; minting + counting via the managed path…');
+  console.error(
+    'seeded an encrypted connection in PGlite; minting + counting via the managed path…',
+  );
 
   const ctx = await getTenantContext(db, 'dev-user');
   const count = await countDives(ctx);

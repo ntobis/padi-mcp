@@ -7,7 +7,12 @@
  * Tenant isolation: the user id is always supplied by the caller (the
  * authenticated session in production), never by tool arguments.
  */
-import { CognitoAuthError, type PadiContext, defaultCognitoConfig, refreshTokens } from '@padi-mcp/core';
+import {
+  CognitoAuthError,
+  type PadiContext,
+  defaultCognitoConfig,
+  refreshTokens,
+} from '@padi-mcp/core';
 import { eq } from 'drizzle-orm';
 import { decryptSecret } from './crypto/envelope';
 import type { AppDb } from './db/client';
@@ -49,7 +54,9 @@ export async function getPadiIdToken(
     .where(eq(padiConnections.workosUserId, userId));
   if (!conn) throw new NotConnectedError(`No PADI account connected for user ${userId}.`);
   if (conn.status !== 'active') {
-    throw new NeedsReloginError(`PADI connection for ${userId} is ${conn.status}; reconnect required.`);
+    throw new NeedsReloginError(
+      `PADI connection for ${userId} is ${conn.status}; reconnect required.`,
+    );
   }
 
   const now = Date.now();
@@ -64,14 +71,20 @@ export async function getPadiIdToken(
 
   try {
     const tokens = await refreshTokens(defaultCognitoConfig(), refreshToken);
-    tokenCache.set(userId, { token: tokens.idToken, expMs: tokens.obtainedAt + tokens.expiresIn * 1000 });
+    tokenCache.set(userId, {
+      token: tokens.idToken,
+      expMs: tokens.obtainedAt + tokens.expiresIn * 1000,
+    });
     await db
       .update(padiConnections)
       .set({ lastRefreshedAt: new Date() })
       .where(eq(padiConnections.workosUserId, userId));
     return tokens.idToken;
   } catch (e) {
-    if (e instanceof CognitoAuthError && (e.code === 'RefreshExpired' || e.code === 'NotAuthorized')) {
+    if (
+      e instanceof CognitoAuthError &&
+      (e.code === 'RefreshExpired' || e.code === 'NotAuthorized')
+    ) {
       tokenCache.delete(userId);
       await db
         .update(padiConnections)

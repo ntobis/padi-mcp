@@ -3,7 +3,16 @@
  * id (Layer-1 auth); everything is keyed on it. We never store the PADI
  * password — only an envelope-encrypted refresh token (see lib/crypto/envelope).
  */
-import { bigint, bigserial, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  bigint,
+  bigserial,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   workosUserId: text('workos_user_id').primaryKey(),

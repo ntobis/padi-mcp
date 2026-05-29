@@ -47,15 +47,14 @@ body {
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background:
-    radial-gradient(
-      135% 95% at 50% -22%,
-      #62d3e8 0%,
-      #1f93c2 22%,
-      #0a5f95 44%,
-      #063763 66%,
-      var(--abyss) 100%
-    );
+  background: radial-gradient(
+    135% 95% at 50% -22%,
+    #62d3e8 0%,
+    #1f93c2 22%,
+    #0a5f95 44%,
+    #063763 66%,
+    var(--abyss) 100%
+  );
   background-attachment: fixed;
   overflow-x: hidden;
 }
@@ -102,7 +101,11 @@ body::before {
   width: var(--s);
   height: var(--s);
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.04));
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.04)
+  );
   border: 1px solid rgba(255, 255, 255, 0.28);
   opacity: 0;
   animation: rise var(--d) linear infinite;
@@ -145,9 +148,7 @@ body::before {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow:
-    0 34px 80px rgba(2, 19, 43, 0.46),
-    0 2px 0 rgba(255, 255, 255, 0.55) inset;
+  box-shadow: 0 34px 80px rgba(2, 19, 43, 0.46), 0 2px 0 rgba(255, 255, 255, 0.55) inset;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   color: var(--ink);

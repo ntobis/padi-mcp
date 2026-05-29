@@ -47,7 +47,9 @@ export default function TermsPage() {
 
         <h2>4. Acceptable use</h2>
         <ul>
-          <li>You will comply with PADI&rsquo;s own terms of use for your PADI account and data.</li>
+          <li>
+            You will comply with PADI&rsquo;s own terms of use for your PADI account and data.
+          </li>
           <li>
             You are responsible for actions taken through the Service, including creating, editing,
             or deleting dives in your logbook.
@@ -78,8 +80,8 @@ export default function TermsPage() {
         <h2>7. Suspension &amp; termination</h2>
         <p>
           We may suspend or discontinue the Service, or a particular account, to protect the Service
-          or its users. You can end your use at any time: disconnect your PADI account or delete your
-          stored data using the in-client tools (<code>padi_disconnect</code>,{' '}
+          or its users. You can end your use at any time: disconnect your PADI account or delete
+          your stored data using the in-client tools (<code>padi_disconnect</code>,{' '}
           <code>padi_delete_my_data</code>).
         </p>
 

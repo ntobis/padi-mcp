@@ -64,7 +64,7 @@ describe('envelope encryption', () => {
     expect(() => kekFromEnv()).toThrow(/32 bytes/);
     process.env.PADI_MASTER_KEY = randomBytes(32).toString('base64');
     expect(kekFromEnv()).toHaveLength(32);
-    if (prev === undefined) delete process.env.PADI_MASTER_KEY;
+    if (prev === undefined) Reflect.deleteProperty(process.env, 'PADI_MASTER_KEY');
     else process.env.PADI_MASTER_KEY = prev;
   });
 });
