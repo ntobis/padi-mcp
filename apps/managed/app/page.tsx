@@ -28,10 +28,10 @@ export default function Home() {
         <div className="brand-badge">
           <WaveMark />
         </div>
-        <h1>Your dive logbook, in Claude.</h1>
+        <h1>Your dive logbook, in your AI assistant.</h1>
         <p>
-          A managed MCP service that connects your PADI dive logbook to Claude — count, search,
-          read, and log dives in plain language.
+          A managed MCP service that connects your PADI dive logbook to Claude, ChatGPT, Cursor, and
+          other MCP-compatible AI assistants — count, search, read, and log dives in plain language.
         </p>
         <div className="endpoint">
           <span>MCP endpoint</span>

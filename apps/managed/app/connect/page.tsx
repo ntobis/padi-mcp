@@ -145,7 +145,7 @@ export default function ConnectPage() {
               <h2>You&apos;re all set</h2>
               <p>{state.message}</p>
               <div className="hint">
-                Head back to Claude and try <code>count my dives</code>.
+                Head back to your AI assistant and try <code>count my dives</code>.
               </div>
             </div>
           ) : (
