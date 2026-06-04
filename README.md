@@ -11,6 +11,12 @@ account just by asking: *"how many dives do I have?"*, *"log today's dive at Blu
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933.svg)](https://nodejs.org)
 [![MCP](https://img.shields.io/badge/MCP-server-6E56CF.svg)](https://modelcontextprotocol.io)
 
+<p align="center">
+  <img src="docs/media/list-dives.gif" alt="Asking an AI assistant to show recent dives and getting a list back from the PADI MCP server" width="720">
+  <br>
+  <em>Ask for your recent dives in plain language — answered live from your PADI logbook.</em>
+</p>
+
 > [!IMPORTANT]
 > **Unofficial & independent.** Not affiliated with, endorsed by, or operated by PADI.
 > PADI has no public API, so this connects to the same backend the PADI logbook web app
@@ -45,6 +51,12 @@ Once it's connected, you just talk to your assistant:
 | "What was my deepest dive this year?" | reads the details and answers |
 | "Log a dive: Blue Hole, today, 28 m, 42 min, nitrox 32" | creates the dive in your logbook |
 | "Change the buddy on dive 20749634 to 'Alex'" | updates that dive |
+
+<p align="center">
+  <img src="docs/media/log-dive.gif" alt="Describing a dive in plain language and the PADI MCP server logging it to the logbook" width="720">
+  <br>
+  <em>Log a dive by describing it — the assistant fills in the logbook entry for you.</em>
+</p>
 
 Set it up once and it keeps itself signed in — no copying tokens every hour.
 
