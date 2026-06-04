@@ -11,6 +11,10 @@ account just by asking: *"how many dives do I have?"*, *"log today's dive at Blu
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933.svg)](https://nodejs.org)
 [![MCP](https://img.shields.io/badge/MCP-server-6E56CF.svg)](https://modelcontextprotocol.io)
 
+<p align="center">
+  <img src="docs/media/demo.gif" alt="Asking an AI assistant &quot;how many dives do I have?&quot; and getting the answer back from the PADI MCP server" width="720">
+</p>
+
 > [!IMPORTANT]
 > **Unofficial & independent.** Not affiliated with, endorsed by, or operated by PADI.
 > PADI has no public API, so this connects to the same backend the PADI logbook web app
