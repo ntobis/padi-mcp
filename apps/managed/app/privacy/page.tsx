@@ -22,8 +22,8 @@ export default function PrivacyPage() {
 
         <p>
           PADI MCP (&ldquo;the Service&rdquo;) is an independent connector between your PADI dive
-          logbook and an MCP client such as Claude. This policy explains what we store and your
-          rights over it. The Service is not affiliated with or operated by PADI.
+          logbook and an MCP client such as Claude, ChatGPT, or Cursor. This policy explains what we
+          store and your rights over it. The Service is not affiliated with or operated by PADI.
         </p>
 
         <h2>What we store</h2>

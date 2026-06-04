@@ -23,8 +23,8 @@ export default function TermsPage() {
         <h2>1. What this service is</h2>
         <p>
           PADI MCP (&ldquo;the Service&rdquo;) is an independent, third-party tool that connects
-          your PADI dive logbook to a Model Context Protocol (MCP) client such as Claude, so you can
-          read and manage your own dives in plain language. The Service is{' '}
+          your PADI dive logbook to a Model Context Protocol (MCP) client such as Claude, ChatGPT,
+          or Cursor, so you can read and manage your own dives in plain language. The Service is{' '}
           <strong>not affiliated with, endorsed, sponsored by, or operated by PADI</strong> or its
           affiliates. &ldquo;PADI&rdquo; is a trademark of its respective owner, used here only to
           describe interoperability.

@@ -3,7 +3,8 @@ import './globals.css';
 
 export const metadata = {
   title: 'PADI MCP — connect your dive logbook',
-  description: 'Securely connect your PADI dive logbook to Claude via the managed MCP service.',
+  description:
+    'Securely connect your PADI dive logbook to Claude, ChatGPT, Cursor, and other MCP-compatible AI assistants via the managed MCP service.',
 };
 
 export const viewport = {
